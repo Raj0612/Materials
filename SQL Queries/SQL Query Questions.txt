@@ -1,0 +1,248 @@
+Combine Two Tables:
+*******************
+Create table If Not Exists Person (personId int, firstName varchar(255), lastName varchar(255));
+Create table If Not Exists Address (addressId int, personId int, city varchar(255), state varchar(255));
+
+insert into Person (personId, lastName, firstName) values ('1', 'Wang', 'Allen');
+insert into Person (personId, lastName, firstName) values ('2', 'Alice', 'Bob');
+
+insert into Address (addressId, personId, city, state) values ('1', '2', 'New York City', 'New York');
+insert into Address (addressId, personId, city, state) values ('2', '3', 'Leetcode', 'California');
+
+SELECT FirstName, LastName, City, State
+FROM Person
+LEFT JOIN Address
+ON Person.PersonId = Address.PersonId;
+
+SELECT person.firstName, address.state
+FROM person
+LEFT JOIN address
+ON person.personId = address.personId;
+=======================================================================================================================================================================================
+
+
+Employees Earning More Than Their Managers:
+*******************************************
+Create table If Not Exists Employee (id int, name varchar(255), salary int, managerId int)
+Truncate table Employee
+insert into Employee (id, name, salary, managerId) values ('1', 'Joe', '70000', '3')
+insert into Employee (id, name, salary, managerId) values ('2', 'Henry', '80000', '4')
+insert into Employee (id, name, salary, managerId) values ('3', 'Sam', '60000', 'None')
+insert into Employee (id, name, salary, managerId) values ('4', 'Max', '90000', 'None')
+
+SELECT emp.*
+FROM Employee emp
+JOIN Employee mgr ON emp.managerId = mgr.id
+WHERE emp.salary > mgr.salary;
+
+select e1.name as Employee from Employee e1, Employee e2 where e1.managerId= e2.id and e1.salary > e2.salary;
+=======================================================================================================================================================================================
+
+
+Big Countries:
+**************
+A country is big if:
+
+it has an area of at least three million (i.e., 3000000 km2), or
+it has a population of at least twenty-five million (i.e., 25000000).
+Write a solution to find the name, population, and area of the big countries.
+
+Create table If Not Exists World (name varchar(255), continent varchar(255), area int, population int, gdp bigint)
+Truncate table World
+insert into World (name, continent, area, population, gdp) values ('Afghanistan', 'Asia', '652230', '25500100', '20343000000')
+insert into World (name, continent, area, population, gdp) values ('Albania', 'Europe', '28748', '2831741', '12960000000')
+insert into World (name, continent, area, population, gdp) values ('Algeria', 'Africa', '2381741', '37100000', '188681000000')
+insert into World (name, continent, area, population, gdp) values ('Andorra', 'Europe', '468', '78115', '3712000000')
+insert into World (name, continent, area, population, gdp) values ('Angola', 'Africa', '1246700', '20609294', '100990000000')
+
+SELECT name, population, area FROM World WHERE area > 3000000 OR population > 25000000
+
+SELECT name, population, area FROM World WHERE area > 3000000
+UNION
+SELECT name, population, area FROM World WHERE population > 25000000
+=======================================================================================================================================================================================
+
+
+Duplicate Emails:
+*****************
+Write a solution to report all the duplicate emails. Note that it's guaranteed that the email field is not NULL.
+
+Create table If Not Exists Person (id int, email varchar(255))
+Truncate table Person
+insert into Person (id, email) values ('1', 'a@b.com')
+insert into Person (id, email) values ('2', 'c@d.com')
+insert into Person (id, email) values ('3', 'a@b.com')
+
+select Email from Person group by Email having count(Email) > 1;
+
+select Email from (
+  select Email, count(Email) as num
+  from Person
+  group by Email ) as statistic where num > 1 ;
+=======================================================================================================================================================================================
+
+Customers Who Never Order:
+**************************
+Write a solution to find all customers who never order anything.
+
+Create table If Not Exists Customers (id int, name varchar(255))
+Create table If Not Exists Orders (id int, customerId int)
+Truncate table Customers
+insert into Customers (id, name) values ('1', 'Joe')
+insert into Customers (id, name) values ('2', 'Henry')
+insert into Customers (id, name) values ('3', 'Sam')
+insert into Customers (id, name) values ('4', 'Max')
+Truncate table Orders
+insert into Orders (id, customerId) values ('1', '3')
+insert into Orders (id, customerId) values ('2', '1')
+
+SELECT c.name AS Customers FROM Customers c LEFT JOIN Orders o ON c.id = o.customerId WHERE o.id IS NULL;
+SELECT Name as Customers from Customers LEFT JOIN Orders ON Customers.Id = Orders.CustomerId WHERE Orders.CustomerId IS NULL;
+Select customers.name as 'Customers' from customers where customers.id not in(select customerid from orders);
+select Name as Customers from customers c  where not exists (select * from Orders o where o.CustomerId=c.id)
+=======================================================================================================================================================================================
+
+Average Time of Process per Machine:
+************************************
+Write an SQL query to find the average time each machine takes to complete a process. The time to complete a process is the 'end' timestamp minus the 'start' timestamp. The average time is calculated by the total time to complete every process on the machine divided by the number of processes that were run. The resulting table should have the machine_id along with the average time as processing_time, which should be rounded to 3 decimal places. Return the result table in any order.
+
+Create table If Not Exists Activity (machine_id int, process_id int, activity_type ENUM('start', 'end'), timestamp float)
+Truncate table Activity
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('0', '0', 'start', '0.712')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('0', '0', 'end', '1.52')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('0', '1', 'start', '3.14')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('0', '1', 'end', '4.12')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('1', '0', 'start', '0.55')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('1', '0', 'end', '1.55')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('1', '1', 'start', '0.43')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('1', '1', 'end', '1.42')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('2', '0', 'start', '4.1')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('2', '0', 'end', '4.512')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('2', '1', 'start', '2.5')
+insert into Activity (machine_id, process_id, activity_type, timestamp) values ('2', '1', 'end', '5')
+
+SELECT s.machine_id, ROUND(AVG(e.timestamp-s.timestamp), 3) AS processing_time
+FROM Activity s INNER JOIN Activity e 
+     ON  s.machine_id = e.machine_id
+     AND s.process_id = e.process_id
+     AND s.activity_type = 'start'
+     AND e.activity_type = 'end'
+GROUP BY s.machine_id
+ORDER BY NULL;
+
+SELECT r.machine_id,
+    ROUND((r.total_end-r.total_start) / (SELECT COUNT(DISTINCT process_id) FROM Activity), 3) [processing_time]
+FROM (
+    SELECT
+        machine_id,
+        SUM(IIF(activity_type = 'start', timestamp, 0)) [total_start],
+        SUM(IIF(activity_type = 'end', timestamp, 0)) [total_end]
+    FROM Activity
+    GROUP BY machine_id
+)
+=======================================================================================================================================================================================
+
+Swap Salary:
+************
+Write a solution to swap all 'f' and 'm' values (i.e., change all 'f' values to 'm' and vice versa) with a single update statement and no intermediate temporary tables.
+Note that you must write a single update statement, do not write any select statement for this problem.
+
+Create table If Not Exists Salary (id int, name varchar(100), sex char(1), salary int)
+Truncate table Salary
+insert into Salary (id, name, sex, salary) values ('1', 'A', 'm', '2500')
+insert into Salary (id, name, sex, salary) values ('2', 'B', 'f', '1500')
+insert into Salary (id, name, sex, salary) values ('3', 'C', 'm', '5500')
+insert into Salary (id, name, sex, salary) values ('4', 'D', 'f', '500')
+
+UPDATE salary
+SET
+    sex = CASE sex
+        WHEN 'm' THEN 'f'
+        ELSE 'm'
+    END;
+Update salary set sex= if(sex = 'm', 'f', 'm');
+
+Customer Placing the Largest Number of Orders
+Write a solution to find the customer_number for the customer who has placed the largest number of orders.
+The test cases are generated so that exactly one customer will have placed more orders than any other customer.
+
+Create table If Not Exists orders (order_number int, customer_number int)
+Truncate table orders
+insert into orders (order_number, customer_number) values ('1', '1')
+insert into orders (order_number, customer_number) values ('2', '2')
+insert into orders (order_number, customer_number) values ('3', '3')
+insert into orders (order_number, customer_number) values ('4', '3')
+
+SELECT customer_number  FROM orders GROUP BY customer_number ORDER BY COUNT(customer_number) DESC  LIMIT 1;
+SELECT TOP 1 customer_number FROM Orders GROUP BY customer_number ORDER BY COUNT(order_number) DESC;
+
+=======================================================================================================================================================================================
+
+Second Highest Salary:
+**********************
+Write a solution to find the second highest salary from the Employee table. If there is no second highest salary, return null.
+
+Create table If Not Exists Employee (id int, salary int)
+Truncate table Employee
+insert into Employee (id, salary) values ('1', '100')
+insert into Employee (id, salary) values ('2', '200')
+insert into Employee (id, salary) values ('3', '300')
+
+select IFNULL(
+(select distinct Salary from Employee order by Salary desc limit  1, 1), NULL) SecondHighestSalary;
+
+select max(Salary) as SecondHighestSalary 
+from Employee where Salary not in( select max(Salary) from Employee );
+
+SELECT ( SELECT DISTINCT salary FROM employee ORDER BY salary DESC LIMIT 1 offset 1 ) AS SecondHighestSalary;
+
+=======================================================================================================================================================================================
+
+
+Fix Names in a Table:
+*********************
+Write a solution to fix the names so that only the first character is uppercase and the rest are lowercase.
+Return the result table ordered by user_id
+
+Create table If Not Exists Users (user_id int, name varchar(40))
+Truncate table Users
+Truncate table Users
+insert into Users (user_id, name) values ('1', 'aLice')
+insert into Users (user_id, name) values ('2', 'bOB')
+
+select user_id, 
+    concat(upper(left(name,1)),lower(substring(name,2))) as name
+from Users  order by user_id;
+
+select user_id,
+       concat(upper(left(name, 1)), lower(right(name, length(name) - 1))) as name
+from Users group by 1 order by 1;
+
+=======================================================================================================================================================================================
+
+Employee Bonus:
+****************
+Write a solution to report the name and bonus amount of each employee with a bonus less than 1000.
+Return the result table in any order.
+
+Create table If Not Exists Employee (empId int, name varchar(255), supervisor int, salary int)
+Create table If Not Exists Bonus (empId int, bonus int)
+Truncate table Employee
+insert into Employee (empId, name, supervisor, salary) values ('3', 'Brad', 'None', '4000')
+insert into Employee (empId, name, supervisor, salary) values ('1', 'John', '3', '1000')
+insert into Employee (empId, name, supervisor, salary) values ('2', 'Dan', '3', '2000')
+insert into Employee (empId, name, supervisor, salary) values ('4', 'Thomas', '3', '4000')
+Truncate table Bonus
+insert into Bonus (empId, bonus) values ('2', '500')
+insert into Bonus (empId, bonus) values ('4', '2000')
+
+select name, bonus from Employee e
+left join Bonus b
+on e.empId = b.empId 
+where b.bonus < 1000 or b.bonus is null
+=======================================================================================================================================================================================
+
+
+
+
+

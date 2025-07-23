@@ -1,0 +1,218 @@
+CONSTRAINTS:
+###########
+
+CREATE TABLE Employees (
+    EmpID INT PRIMARY KEY,
+    EmpName VARCHAR(100),
+    Salary DECIMAL(10,2)
+);
+
+INSERT INTO Employees (EmpID, EmpName, Salary) VALUES
+(1, 'Susan Lee', 50000.00),
+(2, 'Alexa Smith', 60000.00),
+(3, 'Sana Amberson', 45000.00),
+(4, 'Sarah Ronald', 47000.00);
+
+
+--MODIFY THE STRUCTURE OF THE TABLE SUCH THAT THE NAME OF THE EMPLOYEE AND SALARY ARE MANDATORY FIELDS:
+-------------------------------------------------------------------------------------------------------
+
+/* Modifying the column EmpName to be NOT NULL */
+ALTER TABLE   Employees
+MODIFY COLUMN EmpName VARCHAR (100) NOT NULL;
+
+/* Modifying the column Salary to be NOT NULL */
+ALTER TABLE   Employees
+MODIFY COLUMN Salary DECIMAL (10,2) NOT NULL;
+
+/* Describe the structure of the table */
+DESC Employees;
+
+
+/* Add a new column in the table */
+ALTER TABLE    TableName
+ADD ColumnName datatype;
+
+/* Drop a column from the table */
+ALTER TABLE TableName
+DROP COLUMN ColumnName;
+
+/* Rename a column in the table */
+ALTER TABLE   TableName
+RENAME COLUMN OldColumnName TO NewColumnName;
+
+/* Modify data type of an existing column */
+ALTER TABLE   TableName
+MODIFY COLUMN ColumnName datatype;
+
+/* Remove NOT NULL constraint */
+ALTER TABLE   TableName
+MODIFY COLUMN ColumnName datatype NULL;
+
+Alternate Solutions:
+--------------------
+
+#)The NOT NULL constraint can be specified at the time of creation of the table as follows:
+
+CREATE TABLE Employees (
+    EmpID   INT AUTO_INCREMENT PRIMARY KEY,
+    EmpName VARCHAR(100) NOT NULL,
+    Salary  DECIMAL(10, 2) NOT NULL
+);
+
+#)Creating a temporary table
+
+In case there are multiple modifications needed in a table, we can create a new temporary table with all the required modifications and copy all the contents from the original table to the temporary one. We can then drop the original table and rename the temporary table as follows
+
+
+#)Adding a NOT NULL constraint with the DEFAULT value
+
+We can add a default value that is assigned to a column if no value is specified. The DEFAULT keyword is used to specify the default value. 
+
+ALTER TABLE Employees
+MODIFY      EmpName VARCHAR (100) NOT NULL DEFAULT '';
+
+***************************************************************************************************************************************************************************************
+
+The UNIQUE Constraint:
+######################
+
+
+SQL QUERY TO INTRODUCE A CONSTRAINT THAT IF A NEW EMPLOYEE WITH AN ALREADY EXISTING NAME IS GOING TO BE ENTERED:
+----------------------------------------------------------------------------------------------------------------
+
+ALTER TABLE Employees ADD UNIQUE (EmpName);
+
+ALTER TABLE Employees ADD CONSTRAINT UC_EmpName UNIQUE (EmpName);
+
+#)The UNIQUE constraint can be applied to multiple columns as well as follows:
+
+ALTER TABLE    TableName
+ADD CONSTRAINT ConstraintName UNIQUE (ColumnName1, ColumnName2);
+
+
+#)The UNIQUE constraint can be removed from the column/columns using DROP INDEX as follows:
+
+ALTER TABLE TableName DROP INDEX  ConstraintName;
+
+
+
+Alternate solutions
+%%%%%%%%%%%%%%%%%%%
+
+At the time of creating the table
+----------------------------------
+
+CREATE TABLE Employees (
+    EmpID   INT AUTO_INCREMENT PRIMARY KEY,
+    EmpName VARCHAR(100),
+    Salary  DECIMAL(10, 2), 
+    UNIQUE  (EmpName)
+);
+
+
+CREATE TABLE Employees (
+    EmpID   INT AUTO_INCREMENT PRIMARY KEY,
+    EmpName VARCHAR(100) UNIQUE,
+    Salary  DECIMAL(10, 2)
+);
+
+
+
+Without using UNIQUE
+--------------------
+
+/* Inserting data after checking if there would be a duplicate or not */
+INSERT INTO Employees (EmpID, EmpName, Salary)
+SELECT 5, 'Susan Lee', 70000.00 
+WHERE  NOT EXISTS ( 
+       SELECT EmpID FROM Employees WHERE EmpName = 'Susan Lee'
+       );
+	  
+**************************************************************************************************************************************************************************************
+
+The PRIMARY KEY Constraint:
+###########################
+
+MODIFY THE EXISTING TABLE TO INCLUDE A PRIMARY KEY SUCH THAT IT ALSO UPDATES AFTER EACH INSERTION
+-------------------------------------------------------------------------------------------------
+
+ALTER TABLE Employees MODIFY EmpID INT AUTO_INCREMENT PRIMARY KEY;	
+
+/* Multiple columns in a table can be modified as follows */
+ALTER TABLE TableName
+MODIFY      (ColumnName1 datatype1,
+            ColumnName2 datatype2,
+            ColumnName3 datatype3,
+            ...
+            ColumnNamen datatypen
+            );
+
+
+Alternate solution:
+%%%%%%%%%%%%%%%%%%%
+
+At the time of creating the table:
+----------------------------------
+
+CREATE TABLE Employees (
+    EmpID   INT AUTO_INCREMENT PRIMARY KEY,
+    EmpName VARCHAR(100),
+    Salary  DECIMAL(10, 2)
+);
+
+
+**************************************************************************************************************************************************************************************
+
+The FOREIGN KEY Constraint:
+###########################
+
+
+CREATE TABLE Skills (
+    SkillID INT,
+    EmpID INT,
+    SkillName VARCHAR(50)
+);
+
+INSERT INTO Skills (SkillID, EmpID, SkillName) VALUES
+(1, 1, 'C++'),
+(2, 4, 'Java'),
+(3, 1, 'Python'),
+(4, 3, 'Blender');
+
+SQL QUERY TO SET UP A FOREIGN KEY IN THE SKILLS TABLE WHERE EMPID IN THE SKILLS TABLE REFERENCES TO EMPID IN THE EMPLOYEES TABLE
+--------------------------------------------------------------------------------------------------------------------------------
+/* Modifying the EmpID in the Skills table to be NOT NULL */
+ALTER TABLE   Skills
+MODIFY COLUMN EmpID INT NOT NULL;	
+
+/* Adding the foreign key constraint on EmpID in the Skills table */
+ALTER TABLE  Skills
+ADD FOREIGN KEY (EmpID) REFERENCES Employees (EmpID);		
+
+
+
+Alternate solutions:
+%%%%%%%%%%%%%%%%%%%%
+
+REATE TABLE Employees (
+    EmpID INT AUTO_INCREMENT PRIMARY KEY,
+    EmpName VARCHAR(100),
+    Salary DECIMAL(10, 2)
+);
+
+CREATE TABLE Skills (
+    SkillID INT AUTO_INCREMENT PRIMARY KEY,
+    EmpID INT NOT NULL,
+    SkillName VARCHAR (100),
+    FOREIGN KEY (EmpID) REFERENCES Employees (EmpID)
+);
+
+
+#)Statement to temporarily disable a FOREIGN KEY constraint
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+
+#) To Drop FOREIGN KEY CONSTRAINT
+ALTER TABLE Skills DROP FOREIGN KEY Skills_ibfk_1; 	 

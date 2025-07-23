@@ -1,0 +1,77 @@
+Extract a Value From a Date
+###########################
+
+
+CREATE TABLE EmployeeDetails (  
+    EmpID INT PRIMARY KEY,  
+    JobTitle VARCHAR(50),  
+    Country VARCHAR(50),  
+    DateOfJoining DATE  
+);  
+  
+
+INSERT INTO EmployeeDetails (EmpID, JobTitle, Country, DateOfJoining)  
+VALUES  
+    (1, 'Software Engineer', 'USA', '2020-04-13'),  
+    (2, 'Data Analyst', 'Germany', '2019-08-30'),  
+    (3, 'Content Writer', 'Holland', '2024-02-29'),  
+    (4, 'Marketing Manager', 'Canada', '2023-02-28'),  
+    (5, 'Software Engineer', 'USA', NULL);  
+	
+	
+Find out the year of joining of each employee:
+----------------------------------------------
+SELECT *, YEAR(DateOfJoining) AS YearOfJoining FROM  EmployeeDetails;	
+SELECT *, SUBSTRING(DateOfJoining, 1, 4) AS YearOfJoining FROM  EmployeeDetails;
+SELECT *, LEFT(DateOfJoining, 4) AS YearOfJoining FROM  EmployeeDetails;
+SELECT *, DATE_FORMAT(DateOfJoining, '%Y') AS YearOfJoining FROM  EmployeeDetails;
+
+Finding the day of the week when a person joins from a date in the EmployeeDetails table:
+------------------------------------------------------------------------------------------
+SELECT DATE_FORMAT(DateOfJoining, '%W') AS DayOfWeek FROM   EmployeeDetails;
+SELECT DAYNAME(DateOfJoining) AS DayOfWeek FROM   EmployeeDetails; 
+
+Find out the month of joining of each employee:
+-----------------------------------------------
+SELECT *, MONTH(DateOfJoining) FROM   EmployeeDetails;
+
+***************************************************************************************************************************************************************************************
+
+The DATE Column and Calculations
+################################
+
+CREATE TABLE Employees1 (  
+    EmpID INT PRIMARY KEY,  
+    EmpName VARCHAR(50),  
+    DateOfBirth DATE  
+);  
+  
+INSERT INTO Employees1 (EmpID, EmpName, DateOfBirth)  
+VALUES  
+    (1, 'Susan', '1993-07-15'),  
+    (2, 'Alexa', '1990-09-22'),  
+    (3, 'Diana', '1996-03-05'),  
+    (4, 'Sarah', '1996-03-05'),  
+    (5, 'Smith', '1998-11-18'),  
+    (6, 'Carl', '1995-08-27'),  
+    (7, 'Karen', '1991-04-19');  
+
+Find out the age of each employee:
+----------------------------------
+
+SELECT *, FLOOR(TIMESTAMPDIFF(DAY, DateOfBirth, NOW()) / 365) AS Age FROM   Employees;
+
+SELECT *, DATE_FORMAT(NOW(), '%Y') - DATE_FORMAT(DateOfBirth, '%Y') - (DATE_FORMAT(NOW(), '00-%m-%d') < DATE_FORMAT(DateOfBirth, '00-%m-%d')) AS Age FROM   Employees;
+
+SELECT *, YEAR(NOW()) - YEAR(DateOfBirth) - (DATE_FORMAT(NOW(), '%m%d') < DATE_FORMAT(DateOfBirth, '%m%d'))  AS Age FROM   Employees;
+
+SELECT *, YEAR(NOW()) - YEAR(DateOfBirth) - (DAYOFYEAR(NOW()) < DAYOFYEAR(DateOfBirth))  AS Age FROM   Employees;
+
+
+Finding the date of birth of the oldest employee in the company:
+----------------------------------------------------------------
+SELECT MIN(DateOfBirth) FROM Employees;
+
+Counting the employees who have their birthday within a specified range:
+------------------------------------------------------------------------
+SELECT  COUNT(*) FROM    Employees WHERE   DateOfBirth BETWEEN '1993-01-01' AND '1995-12-31';  

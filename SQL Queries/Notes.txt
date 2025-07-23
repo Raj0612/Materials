@@ -1,0 +1,134 @@
+Filtering with aggregate functions (AVG, SUM, etc.) in the WHERE clause is not possible because the WHERE clause filters individual rows.
+
+
+The UNION operator combines the output of two or more SELECT statements.
+
+ 
+The COALESCE() function ensures that if there is a NULL value in the column, it is replaced with 0.
+
+SELECT   StudentName, TheoryMarks, PracticalMarks, (TheoryMarks + PracticalMarks) AS CumulativeMarks
+FROM     StudentGrades1 
+WHERE    Subject = 'Science' 
+ORDER BY (COALESCE(TheoryMarks,0) + COALESCE(PracticalMarks,0)) DESC 
+LIMIT    3;
+
+
+The MODIFY COLUMN or MODIFY statement can be used to modify a colum.
+Note: If multiple columns have to be set to NOT NULL, individual queries have to be written to update the columns.
+
+
+A subquery must return only one column.
+SELECT clause is mandatory in a subquery.
+
+ORDER BY:
+########
+
+The ORDER BY clause sorts the result of a SELECT query either in ascending or descending form using ASC or DESC respectively. In case ASC or DESC is not mentioned in the ORDER BY clause, the result set will be sorted in ascending order by default. It is applied to a column mentioned in the SELECT query as shown in the following:
+
+SELECT  Column1, Column2 FROM TableName ORDER BY Column1 ASC;
+
+In ORDER BY, mentioning the name of the column is not necessary, and numbers representing the occurrence of the column in SELECT query can also work. The numbers start from 1, corresponding to the first column in the SELECT query as shown below, which is equivalent to the above query.
+
+SELECT  Column1, Column2, Column3 FROM TableName ORDER BY 1, 3;
+
+
+The LIMIT clause limits the records to a specified value. The LIMIT clause uses two values. One of them is offset, which is optional, and the other is the limit of records. The default value for offset is 0. The following is the syntax of the LIMIT clause:
+
+SELECT ColumnName FROM   TableName LIMIT  [offset,] number;
+
+
+
+SELECT StudentName, TheoryMarks FROM StudentGrades ORDER BY TheoryMarks DESC, StudentName ASC;
+The query will sort the result set by TheoryMarks in descending order and then by StudentName in ascending order for rows with the same marks.
+
+
+JOINS:
+######
+
+*)JOIN is used to combine rows from two or more tables based on their related columns. LEFT JOIN returns all content from the column of the left table and only those entries of the right table that satisfy the mentioned conditions.
+
+SELECT    a.ColumnName
+FROM      TableName1 AS a 
+LEFT JOIN TableName2 AS b ON a.SomeColumn = b.AnotherColumn;
+
+*)LEFT JOIN can also be applied by specifying columns in the USING clause as follows:
+
+SELECT    a.ColumnName
+FROM      TableName1 AS a 
+LEFT JOIN TableName2 AS b USING (commonColumn);
+
+
+
+
+CONSTRAINTS:
+############
+
+UNIQUE
+******
+
+^) The UNIQUE constraint can be added using ADD as follows
+ALTER TABLE TableName ADD UNIQUE  (ColumnName);
+
+^)A constraint can also be given a name using CONSTRAINT as follows:
+ALTER TABLE    TableName ADD CONSTRAINT ConstraintName UNIQUE (ColumnName);
+
+^)The UNIQUE constraint can be applied to multiple columns as well as follows:
+ALTER TABLE    TableName ADD CONSTRAINT ConstraintName UNIQUE (ColumnName1, ColumnName2);
+
+^)The UNIQUE constraint can be removed from the column/columns using DROP INDEX as follows:
+ALTER TABLE TableName DROP INDEX  ConstraintName;
+
+
+^)MODIFY can be used to change the structure of a table; see the example below:
+/* Multiple columns in a table can be modified as follows */
+ALTER TABLE TableName
+MODIFY      (ColumnName1 datatype1,
+            ColumnName2 datatype2,
+            ColumnName3 datatype3,
+            ...
+            ColumnNamen datatypen
+            );
+			
+^)AUTO_INCREMENT and PRIMARY KEY can be applied to an existing column using MODIFY as follows:
+ALTER TABLE TableName MODIFY  ColumnName datatype AUTO_INCREMENT PRIMARY KEY;
+
+
+^)AUTO_INCREMENT can be removed using MODIFY as follows:
+ALTER TABLE TableName MODIFY ColumnName datatype;
+
+
+^)PRIMARY KEY can be removed using DROP as follows:
+ALTER TABLE TableName DROP  PRIMARY KEY;
+
+
+^)FOREIGN KEY can be removed using the following command.
+ALTER TABLE TableName DROP FOREIGN KEY ColumnName;
+
+
+^)Statement to temporarily disable a FOREIGN KEY constraint
+SET FOREIGN_KEY_CHECKS = 0;
+
+You can check the status of the foreign key status using SHOW VARIABLES LIKE 'foreign_key_checks';.
+
+
+SUBQUERY:
+#########
+
+^)Subqueries can also be written in the SELECT clause like:
+
+SELECT (SELECT Column1 FROM Table1) AS sa, Column2
+FROM   Table2;
+
+^) Subqueries can be used in the WHERE clause as follows:
+SELECT   a.Column1
+FROM     Table1 AS a
+WHERE    a.Column1 IN (SELECT Column1 FROM Table2)
+
+^)Subqueries can also be written in the HAVING clause as follows:
+
+SELECT   Column1, AVG(Column2)
+FROM     Table1
+GROUP BY Column1
+HAVING   AVG(Column2) > (SELECT AVG(Column2) FROM Table1);
+
+^)A subquery must return only one column.

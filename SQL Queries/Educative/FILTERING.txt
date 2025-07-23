@@ -1,0 +1,79 @@
+Filter with the WHERE Clause:
+#############################
+CREATE TABLE StudentGrades (  
+    RecordID INT PRIMARY KEY,  
+    StudentID VARCHAR(20),  
+    StudentName VARCHAR(50),  
+    Subject VARCHAR(50),  
+    Marks DECIMAL(5,2) NULL  
+);  
+  
+INSERT INTO StudentGrades (RecordID, StudentID, StudentName, Subject, Marks)  
+VALUES  
+    (1, 'st-101', 'Alexa', 'Mathematics', 90.00),  
+    (2, 'st-101', 'Alexa', 'Science', NULL),  
+    (3, 'st-102', 'Diana', 'Mathematics', 80.00),  
+    (4, 'st-102', 'Diana', 'Science', 88.00),  
+    (5, 'st-103', 'Carl', 'Mathematics', NULL),  
+    (6, 'st-103', 'Carl', 'Science', 92.00),  
+    (7, 'st-104', 'Sara', 'Mathematics', 75.00),  
+    (8, 'st-104', 'Sara', 'Science', 85.00),  
+    (9, 'st-105', 'Karen', 'Mathematics', 85.00),  
+    (10, 'st-105', 'Karen', 'Science', 90.00); 
+	
+	
+	
+Find out the records of a student whose StudentID is st-104:
+------------------------------------------------------------
+SELECT * FROM StudentGrades WHERE  StudentID = 'st-104'; 
+SELECT * FROM StudentGrades WHERE  StudentID LIKE 'st-104'; 
+
+Using session variables:
+************************
+SET    @student_id = 'st-104';
+SELECT * FROM StudentGrades 
+WHERE  StudentID = @student_id; 
+
+
+Finding the records for st-104 and st-105:
+------------------------------------------
+SELECT * FROM StudentGrades WHERE  StudentID = 'st-104' OR  StudentID = 'st-105';
+
+Finding the highest marks:
+--------------------------
+SELECT MAX(Marks) FROM   StudentGrades WHERE  Subject = 'Mathematics'
+
+***************************************************************************************************************************************************************************************
+
+Filter with the LIKE Operator
+#############################
+
+Find out records of students whose name ends with “a”
+----------------------------------------------------
+
+SELECT * FROM StudentGrades WHERE  StudentName LIKE '%a';
+SELECT * FROM StudentGrades WHERE  RIGHT(StudentName, 1) = 'a';
+
+SELECT * FROM StudentGrades WHERE  SUBSTRING(StudentName, -1) = 'a';
+Note: The SUBSTR() and MID()functions are same as the SUBSTRING() function.
+
+SELECT * FROM StudentGrades WHERE  StudentName REGEXP 'a$';
+Note: The LIKE operator is same as REGEXP. It stands for Regular Expression LIKE.
+
+
+LOCATE() and REVERSE():
+***********************
+We can use the LOCATE() function to filter the records. The LOCATE() function takes three variables: a substring, the string, and the start position. It returns the position of the first occurrence of the substring in the string. In our use case, the REVERSE() function reverses the names in the StudentName column, and the LOCATE() function checks names in the StudentName column to find if the first letter of the reversed name is “a.” 
+
+SELECT * FROM StudentGrades WHERE  LOCATE('a', REVERSE(StudentName)) = 1;
+
+
+Finding the records of student names starting with “C” or ending in “a”:
+-----------------------------------------------------------------------
+
+SELECT * FROM StudentGrades WHERE  StudentName LIKE 'C%'  OR   StudentName LIKE '%a'; 
+
+
+Four-letter names: Searching for exact-length records:
+------------------------------------------------------
+SELECT * FROM   StudentGrades WHERE  StudentName LIKE '____';

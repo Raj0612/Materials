@@ -1,0 +1,124 @@
+Swapping Bug:
+#############
+
+Each order’s item was incorrectly paired with the next item from the next row.
+That is, each item is swapped with the next item.
+
+Your task is to:
+Fix the data & show the correct item for each Order_ID. If the last Order_ID is odd, then keep the item unchanged.
+
+Explanition of the problem:
+
+1) A single table is given, that is the Orders table.
+2) The question states that “the item is swapped with the next item”.
+3) It means: Order_ID: 1 should get ‘Biryani’ (from row 2).
+4) And, Order_ID: 2 should get ‘Butter Naan’ (from row 1).
+5) Here, the last order that is Order_ID: 5 will have the same order, which is ‘Tandoori Chicken’.
+6) Because the last order is ‘odd’.
+
+
+Select Query to fix:
+--------------------
+
+
+SELECT
+    Order_ID,
+    CASE
+        WHEN MOD(Order_ID, 2) = 1 AND Order_ID < (SELECT MAX(Order_ID) FROM Orders)
+            THEN LEAD(Item) OVER (ORDER BY Order_ID)
+        WHEN MOD(Order_ID, 2) = 0
+            THEN LAG(Item) OVER (ORDER BY Order_ID)
+        ELSE
+            Item
+    END AS Item
+FROM
+    Orders
+ORDER BY
+    Order_ID;
+	
+	
+Explanation:
+- For odd Order_IDs (except the last one), show the next item's name (LEAD).
+- For even Order_IDs, show the previous item's name (LAG).
+- For the last Order_ID if it's odd, keep the item unchanged.
+	
+	
+	
+	
+To fix the swapped data in your table, you need to use a two-step process:
+
+Create a temporary mapping of the correct items using a SELECT with window functions.
+Update the original table by joining it with this mapping.	
+
+Step 1: Create the Correct Mapping Using a CTE:
+----------------------------------------------
+
+
+WITH fixed_orders AS (
+  SELECT
+    Order_ID,
+    CASE
+      WHEN MOD(Order_ID, 2) = 1 AND Order_ID < (SELECT MAX(Order_ID) FROM Orders)
+        THEN LEAD(Item) OVER (ORDER BY Order_ID)
+      WHEN MOD(Order_ID, 2) = 0
+        THEN LAG(Item) OVER (ORDER BY Order_ID)
+      ELSE
+        Item
+    END AS correct_item
+  FROM Orders
+)
+
+
+
+Step 2: Update the Table Using the Mapping
+------------------------------------------
+UPDATE Orders o
+JOIN (
+  WITH fixed_orders AS (
+    SELECT
+      Order_ID,
+      CASE
+        WHEN MOD(Order_ID, 2) = 1 AND Order_ID < (SELECT MAX(Order_ID) FROM Orders)
+          THEN LEAD(Item) OVER (ORDER BY Order_ID)
+        WHEN MOD(Order_ID, 2) = 0
+          THEN LAG(Item) OVER (ORDER BY Order_ID)
+        ELSE
+          Item
+      END AS correct_item
+    FROM Orders
+  )
+  SELECT * FROM fixed_orders
+) f
+ON o.Order_ID = f.Order_ID
+SET o.Item = f.correct_item;
+
+
+
+If your MySQL version does not support CTEs in UPDATE JOIN: You can use a temporary table:
+-------------------------------------------------------------------------------------------
+
+
+-- Step 1: Create the mapping in a temp table
+----------------------------------------------
+CREATE TEMPORARY TABLE fixed_orders AS
+SELECT
+  Order_ID,
+  CASE
+    WHEN MOD(Order_ID, 2) = 1 AND Order_ID < (SELECT MAX(Order_ID) FROM Orders)
+      THEN LEAD(Item) OVER (ORDER BY Order_ID)
+    WHEN MOD(Order_ID, 2) = 0
+      THEN LAG(Item) OVER (ORDER BY Order_ID)
+    ELSE
+      Item
+  END AS correct_item
+FROM Orders;
+
+-- Step 2: Update the original table
+------------------------------------
+UPDATE Orders o
+JOIN fixed_orders f ON o.Order_ID = f.Order_ID
+SET o.Item = f.correct_item;
+
+-- Step 3: Drop the temp table
+------------------------------
+DROP TEMPORARY TABLE fixed_orders;

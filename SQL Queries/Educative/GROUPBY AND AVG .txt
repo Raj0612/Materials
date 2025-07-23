@@ -1,0 +1,101 @@
+NOTE: Filtering with aggregate functions (AVG, SUM, etc.) in the WHERE clause is not possible because the WHERE clause filters individual rows.
+
+
+CREATE TABLE StudentGrades (  
+    RecordID INT PRIMARY KEY,  
+    StudentID VARCHAR(20),  
+    StudentName VARCHAR(50),  
+    Subject VARCHAR(50),  
+    Marks DECIMAL(5,2) NULL  
+);  
+  
+-- Insert the records  
+INSERT INTO StudentGrades (RecordID, StudentID, StudentName, Subject, Marks)  
+VALUES  
+    (1, 'st-101', 'Alexa', 'Mathematics', 90.00),  
+    (2, 'st-101', 'Alexa', 'Science', NULL),  
+    (3, 'st-102', 'Diana', 'Mathematics', 80.00),  
+    (4, 'st-102', 'Diana', 'Science', 88.00),  
+    (5, 'st-103', 'Carl', 'Mathematics', NULL),  
+    (6, 'st-103', 'Carl', 'Science', 92.00),  
+    (7, 'st-104', 'Sara', 'Mathematics', 75.00),  
+    (8, 'st-104', 'Sara', 'Science', 85.00),  
+    (9, 'st-105', 'Karen', 'Mathematics', 85.00),  
+    (10, 'st-105', 'Karen', 'Science', 90.00);  
+	
+The GROUP BY Clause and the AVG
+###############################	
+	
+---SQL QUERY THAT TELLS US THE AVERAGE OF MARKS FOR EACH SUBJECT
+----------------------------------------------------------------
+
+SELECT   Subject, AVG(Marks) AS averageMarks FROM  StudentGrades GROUP BY Subject;
+
+SELECT DISTINCT Subject, 
+       (SELECT AVG(Marks) FROM StudentGrades AS S2 WHERE S1.Subject = S2.Subject)
+       AS TotalMarks
+FROM   StudentGrades AS S1;
+
+
+--FINDING THE HIGHEST MARKS IN EACH SUBJECT
+-------------------------------------------
+
+SELECT   Subject, MAX(Marks) FROM StudentGrades GROUP BY Subject;
+
+SELECT DISTINCT Subject, 
+       (SELECT max(Marks) FROM StudentGrades AS S2 WHERE S1.Subject = S2.Subject)
+       AS TotalMarks
+FROM   StudentGrades AS S1;
+
+
+
+--CALCULATING THE AVERAGE PRICE IN EACH CATEGORY
+------------------------------------------------
+
+SELECT Category, AVG(Price) FROM Products GROUP BY Category; 
+
+***************************************************************************************************************************************************************************************
+
+The GROUP BY Clause and the SUM
+###############################
+
+CREATE TABLE Products (
+    ProductID INT PRIMARY KEY,
+    ProductName VARCHAR(100),
+    Category VARCHAR(50),
+    Price DECIMAL(10,2),
+    UnitsSold INT
+);
+
+INSERT INTO Products (ProductID, ProductName, Category, Price, UnitsSold) VALUES
+(1, 'Smartphone', 'Electronics', 599.99, 100),
+(2, 'Laptop', 'Electronics', 999.99, 50),
+(3, 'Headphones', 'Electronics', 149.99, 75),
+(4, 'T-shirt', 'Apparel', 19.99, 200),
+(5, 'Jeans', 'Apparel', 39.99, 150),
+(6, 'Running shoes', 'Footwear', 79.99, 100),
+(7, 'Bagpack', 'Accessories', 49.99, 80);
+
+
+--SQL QUERY THAT TELLS US THE SUM OF PRICES FOR EACH CATEGORY.
+--------------------------------------------------------------
+
+SELECT Category, SUM(Price) AS TotalPrice FROM Products GROUP BY Category;
+
+
+SELECT  Category, 
+         (SELECT SUM(Price) FROM Products p2 WHERE p1.Category = p2.Category)
+         AS AveragePrice
+FROM     Products p1
+GROUP BY Category;
+
+
+--FINDING THE MAXIMUM PRICE IN EACH CATEGORY
+--------------------------------------------
+SELECT  Category, MAX(Price) FROM  Products GROUP BY Category;
+
+
+
+--FINDING THE SUM OF MARKS IN EACH SUBJECT
+------------------------------------------
+SELECT   Subject, SUM(Marks) FROM     StudentGrades GROUP BY Subject;

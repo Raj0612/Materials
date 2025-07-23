@@ -1,0 +1,159 @@
+SORTING
+#######
+
+CREATE TABLE Employees (
+    EmpID INT PRIMARY KEY,
+    EmpName VARCHAR(100),
+    Salary DECIMAL(10,2)
+);
+
+INSERT INTO Employees (EmpID, EmpName, Salary) VALUES
+(1, 'Susan Lee', 50000.00),
+(2, 'Alexa Smith', 60000.00),
+(3, 'Sana Amberson', 45000.00),
+(4, 'Sarah Ronald', 47000.00);
+
+--FIND OUT THE TOP THREE HIGHEST-PAID EMPLOYEES AND SORT THEM IN ORDER OF THEIR SALARY
+--------------------------------------------------------------------------------------
+
+SELECT  EmpName, Salary FROM  Employees ORDER BY Salary DESC LIMIT  3;
+
+SELECT  EmpName, Salary FROM  Employees ORDER BY Salary ASC LIMIT 1, 3;
+
+SELECT TOP 3 EmpID, EmpName, Salary FROM Employees ORDER BY Salary DESC;
+
+Using UNION:
+###########
+
+SELECT   EmpName, Salary
+FROM     Employees
+WHERE    Salary = (SELECT MAX(Salary) FROM Employees)
+UNION
+SELECT   EmpName, Salary
+FROM     Employees
+WHERE    Salary = (SELECT MAX(Salary) FROM Employees WHERE Salary < 
+                (SELECT MAX(Salary) FROM Employees))
+UNION
+SELECT   EmpName, Salary
+FROM     Employees
+WHERE    Salary = (SELECT MAX(Salary) FROM Employees WHERE Salary < 
+                  (SELECT MAX(Salary) FROM Employees WHERE Salary < 
+                  (SELECT MAX(Salary) FROM Employees)))
+ORDER BY Salary DESC;
+
+
+Using OR:
+#########
+
+SELECT   EmpName, Salary
+FROM     Employees
+WHERE    Salary = (SELECT MAX(Salary) FROM Employees)
+OR       Salary = (SELECT MAX(Salary) FROM Employees WHERE Salary < 
+                  (SELECT MAX(Salary) FROM Employees))
+OR       Salary = (SELECT MAX(Salary) FROM Employees WHERE Salary < 
+                  (SELECT MAX(Salary) FROM Employees WHERE Salary < 
+                  (SELECT MAX(Salary) FROM Employees)))
+ORDER BY Salary DESC;
+
+Session variables
+#################
+
+SELECT EmpName, Salary
+FROM   (SELECT EmpName, Salary, @rank := @rank + 1 AS rank
+       FROM Employees, (SELECT @rank := 0) r
+       ORDER BY Salary DESC) AS subquery
+WHERE  rank <= 3;
+
+
+
+FINDING THE THREE LEAST-PAID EMPLOYEES IN THE EMPLOYEES TABLE:
+-------------------------------------------------------------
+
+SELECT TOP 3 EmpID, EmpName, Salary FROM Employees ORDER BY Salary ASC;
+
+SELECT EmpName, Salary FROM  Employees ORDER BY Salary ASC LIMIT  3;
+
+SELECT EmpID, EmpName, Salary
+FROM Employees
+WHERE Salary <= (
+    SELECT DISTINCT Salary
+    FROM Employees
+    ORDER BY Salary ASC
+    LIMIT 1 OFFSET 2
+);
+  
+  
+  
+FINDING THE SECOND-HIGHEST SALARY:
+----------------------------------
+
+SELECT DISTINCT SALARY FROM EMPLOYEES ORDER BY SALARY DESC LIMIT 1 OFFSET 1;  
+
+***************************************************************************************************************************************************************************************
+
+
+SORTING AND CALCULATIONS:
+#########################
+
+CREATE TABLE StudentGrades1 (
+    RecordID INT PRIMARY KEY,
+    StudentID VARCHAR(20),
+    StudentName VARCHAR(50),
+    Subject VARCHAR(50),
+    TheoryMarks INT,
+    PracticalMarks INT
+);
+
+INSERT INTO StudentGrades1 (RecordID, StudentID, StudentName, Subject, TheoryMarks, PracticalMarks) VALUES
+(1, 'st-101', 'Alexa', 'Mathematics', 90, NULL),
+(2, 'st-101', 'Alexa', 'Science', NULL, 80),
+(3, 'st-102', 'Diana', 'Mathematics', 80, NULL),
+(4, 'st-102', 'Diana', 'Science', 88, 60),
+(5, 'st-103', 'Carl', 'Mathematics', NULL, NULL),
+(6, 'st-103', 'Carl', 'Science', 92, 90),
+(7, 'st-104', 'Sara', 'Mathematics', 75, NULL),
+(8, 'st-104', 'Sara', 'Science', 85, 95),
+(9, 'st-105', 'Karen', 'Mathematics', 85, NULL),
+(10, 'st-105', 'Karen', 'Science', 90, 70);
+
+
+--TO FIND OUT THE TOP THREE STUDENTS WHO HAVE RECEIVED THE HIGHEST CUMULATIVE MARKS IN SCIENCE:
+-----------------------------------------------------------------------------------------------
+
+## The COALESCE() function ensures that if there is a NULL value in the column, it is replaced with 0.
+
+SELECT   StudentName, TheoryMarks, PracticalMarks, (TheoryMarks + PracticalMarks) AS CumulativeMarks
+FROM     StudentGrades1 
+WHERE    Subject = 'Science' 
+ORDER BY (COALESCE(TheoryMarks,0) + COALESCE(PracticalMarks,0)) DESC 
+LIMIT    3;
+
+
+SELECT   StudentName, TheoryMarks, PracticalMarks, (COALESCE(TheoryMarks, 0) + COALESCE(PracticalMarks, 0)) AS CMarks
+FROM     StudentGrades 
+WHERE    Subject = 'Science' 
+ORDER BY CMarks DESC 
+LIMIT    3;
+
+
+SELECT   StudentName, TheoryMarks, PracticalMarks, (TheoryMarks + PracticalMarks) AS CMarks 
+FROM     (SELECT StudentName, TheoryMarks, PracticalMarks
+         FROM    StudentGrades
+         WHERE   Subject = 'Science') AS SubQuery
+ORDER BY (COALESCE(TheoryMarks, 0) + COALESCE(PracticalMarks, 0)) DESC 
+LIMIT    3;
+
+
+SELECT StudentID, StudentName, COALESCE(SUM(TheoryMarks), 0) + COALESCE(SUM(PracticalMarks), 0) AS TotalScienceMarks
+FROM  StudentGrades1
+WHERE Subject = 'Science'
+GROUP BY StudentID, StudentName
+ORDER BY TotalScienceMarks DESC
+LIMIT 3;
+
+
+SELECT TOP 3 StudentID, StudentName, ISNULL(SUM(TheoryMarks), 0) + ISNULL(SUM(PracticalMarks), 0) AS TotalScienceMarks
+FROM StudentGrades1
+WHERE Subject = 'Science'
+GROUP BY StudentID, StudentName
+ORDER BY TotalScienceMarks DESC;
