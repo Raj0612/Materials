@@ -1,0 +1,336 @@
+
+SecurityProperties.java :- Responsible for generating default password(UUID.randomUUID().toString();) when spring security dependency jar is added
+spring.security.user.name=$(SPRING_USERNAME:raj) :- SPRING_USERNAME is defined in environment variables and raj is the default if SPRING_USERNAME is not present in environment variables
+spring.security.user.password = ""
+spring.security.user.roles = ""
+mention those in application.properties file
+
+
+Servlet Container:
+------------------
+Servlet Container(Web Server) takes care of translating HTTP messages for java code to understand. Servlet Container converts the HTTP messages to ServletRequest and hand over to servlet method as a parameter. Similarly ServletResponse returns as an output to Servlet Container from Servlet.
+
+Application.properties
+server.port=${SPRING_PORT:9090}   --- If an environment variable with name SPRING_PORT is present it will take that value else default value is set as 9090
+logging.level.org.springframework.security =
+
+
+We can have multiple AuthenticationProvider
+
+Filters in Spring Security:
+---------------------------
+AuthorizationFilter
+DefaultLoginPageGeneratingFilter :
+AbstractAuthenticationFilter : UsernamePasswordAuthenticatonFilter
+BasicAuthenticationFilter :- for httpBasic
+UserNamePasswordAuthenticationFilter :- for formLogin
+
+for formLogin UserNamePasswordAuthenticationFilter will be used 
+for http BasicAuthenticationFilter will be used
+
+Spring security doesnt enforce CSRF protection for the reading(GET) operation. But for POST, PUT we have to disable.
+
+***************************************************************************************************************************************************************************************
+
+PasswordEncoder:
+----------------
+{noop}value :- Dont encode password use the plain password.
+PasswordEncoderFactories.createDelegatingPasswordEncoder() :- Contains all teh password encoder supported by Spring Security
+BCryptPasswordEncoder :- default password encoder. It has 3 versions ($2a, $2b, $2y). Default strength value is 10. Strength value should be between 4 and 31.
+Argon2PasswordEncoder :- It is the advanced one.
+CompromisedPasswordChecker interface (HaveIBeenPwnedRestApiPasswordChecker) - 	From Spring Security 6.3 version
+HaveIBeenPwnedRestApiPasswordChecker class - To check the password is compromised. Uses API Url :- https://api.pwnedpasswords.com/range/
+
+Encoding Standard : BASE64, UNICODE, ASCII
+Openssl - a tool used to encode and decode values. It is also used for encryption and decryption. It also used for hashing
+for encode -- openssl base64 -in 'textfile' -out 'textfile1'
+for decode -- openssl base64 -d -in 'textfile1' -out 'textfile'
+
+Symmetric encryption -  same key will be used for encryption and decryption. Famous algorithm is AES, Triple DES, Blowfish.
+Asymmetric Encryption -- It has 2 keys. One is public key(encrypting) and another is private key(decrypting). Owner will generate the 2 types of keys and will keep the private key and distribute the public key to any number of third party.  Most commonly used algorithms are RSA, ECC, PGP and Diffie-Hellman.
+
+SHA256 is an algorithm used for hashing.
+
+***************************************************************************************************************************************************************************************
+Annotations:
+------------
+@ComponentScan("packageName")  --  To scan the components in the package. If the component is in the same root package no need to define else have to give.
+@EnableJpaRepositories("pacageName") -- To scan the @Repository annotated class. If those are present in the same root package no need to define else have to give.
+@EntityScan("pacageName") -- To scan the @Entity annotated class. If those are present in the same root package no need to define else have to give.
+@EnableWebSecurity -- If only spring security is used and no other Spring Boot feature we have to mention else optional.
+
+@JsonProperty(acess=JsonProperty.Access.WRITE_ONLY) :- annotate on top of the entity class field
+
+@Async - It should be annotated on top of a method which indicates that the logic in the method have to execute in a separate asynchoronous thread.
+
+***************************************************************************************************************************************************************************************
+
+SecurityConfig
+http.formLogin(withDefaults()) -- To enable form based login
+http.httpBasic(withDefaults()) -- To validate the credentials in the Http Headers by Base64 encoding. To validate by calling API
+http.authorizeHttpRequests((request) -> request.requestMatchers("/path", "/path1").authenticated()
+											   . requestMatchers("/path").permitAll());
+http.formLogin(httpSecurityFormLoginConfigurer -> httpSecurityFormLoginConfigurer.disable()) -- To disable form based login
+
+***************************************************************************************************************************************************************************************
+
+UsernamePasswordAuthenticationToken implements Authentication.
+ProviderManager implements AuthenticationManager
+DaoAuthenticationProvider is the default Authentication provider which extends AbstractUserDetailsAuthenticationProvider which implements AuthenticationProvider. If no custom AuthenticationProvider is there then DaoAuthenticationProvider is used
+
+InMemoryUserDetailsManager implements UserDetailsManager which extends UserDetailsService
+User implements UserDetails
+
+UserDetailService(interface)- loadUserByUserName(String): UserDetails
+
+UserDetailsManager(interface) - createUser(UserDetails user), updateUser(UserDetails user), deleteUser(UserDetails user), changePassword(String oldPwd, String newPwd), userExists(String userName)
+
+UserDetails(interface) - getAuthorities(), getPassword(), getUserName(), isAccountNonExpired(), isAccountNonLocked(), isCredentialsNonExpired(), isEnabled()
+
+UserDetailsManager extends UserDetailService
+InMemoryUserDetailsManager, JdbcUserDetailsManager, LdapUserDetailsManager implements UserDetailsManager
+User implements UserDeatails, CredentialsCounter
+
+Authentication inerface extends Principal interface
+UsernamePasswordAuthenticationToken implements Authentication
+Principal :- getName()
+Authentication :- getPrincipal(), getCredentials(), getAuthorities(), getDetails(), isAuthenticated(), setAuthenticated(), eraseCredntials()
+
+***************************************************************************************************************************************************************************************
+
+Authentication Provder:
+-----------------------
+It has 2 methods authenticate, supports.
+DaoAuthenticationProvider is the default Authentication provider which extends AbstractUserDetailsAuthenticationProvider which implements AuthenticationProvider. If no custom AuthenticationProvider is there then DaoAuthenticationProvider is used.
+
+If Authenticate object is of type UsernamePasswordAuthenticationToken then provider manager will use DaoAuthenticationProvider.
+
+authenticate(Authentication authentication) method in ProviderManager decides which Authenticate Provider to use.
+
+***************************************************************************************************************************************************************************************
+
+To Load Profiles:
+-----------------
+We can create the environmental variables as SPRING_PROFILES_ACTIVE=prod which is the first priority
+spring.config.import = application_prod.properties, application_uat.properties :- To define which profiles have to use
+spring.profiles.active = uat
+
+@Profile("profileName") or @Profile("!profileName") -- To use the component depends on the profileName which is active. Define in the top of the java class.
+
+***************************************************************************************************************************************************************************************
+CORS:
+----
+@CrossOrign annotated on top of the class or method like below
+@CrossOrign(origins= "websiteName")
+@CrossOrign(origins= "*")
+
+We have to use CorsConfigurationSource interface in our SecurityConfig class. This is the recommended one.
+Using CorsConfigurationSource we can set AllowedOrigins, AllowedMethods, AllowCredentials, AllowedHeaders, MaxAge, ExposedHeaders
+
+Browser will send a preflight request to the backend to know the CORS configuartion.  Backend should send Access-Control-Allow-Origin header which has the allowed orign configured in Spring as value.  Then only the actual API will be called.
+
+CSRF:
+-----
+By default CSRF will be applied to POST, DELETE, PUT which are used to alter the data.
+
+CSRF Token : Used to prevent CSRF attack. It will be unique per user session. It is also called as XSRF token. CSRF Token should be sent by the UI to the backend in each request  either in header or payload along with CSRF cookie by the browser.
+
+CsrfToken interface is used to create the CSRF Token by Spring. Use CookieCsrfTokenReposity class as storing CSRF Token in cookie is better than stoting is session.
+http.csrf(csrfConfig -> csrfConfig.csrfTokenRepository(CookieCsrfTokenReposity.withHttpOnlyFalse())) add this is SecurityConfig class. withHttpOnlyFalse :- js code also will read the cookie
+
+CsrfFilter is responsible for validating the CsrfToken
+
+If csrf is not disabled we will get 403(Formidden) status code error.
+
+***************************************************************************************************************************************************************************************
+
+HTTPS:
+-----
+requiresChannel method will be used to secure with HTTPs protocol.
+	 http.requiresChannel(rcc -> rcc.anyRequest().requiresSecure()). Define in the SecurityConfig class 
+	 http.requiresChannel(rcc -> rcc.anyRequest().requiresInSecure()). For using only http
+	 
+Exception Handling:
+-------------------
+401 Code : Authentication Failure
+403 Code : Forbidden or Authorization Failure
+
+ExceptionTranslationFilter handles exception related to authentication and authorization within the filter chain.
+
+AuthenticationEntryPoint interface -- to handle custom authentication exception
+	http.httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomExceptionClass()))
+AccessDeniedHandler interface - To handle custom authorization exception
+	http.exceptionHandling(ehc -> ehc.accessDeniedHandler(new CustomAccessDeniedHandlerClass()))
+
+Session:
+--------
+Default time for a session is 30 minutes. JsessionID will be for 30 minutes by default
+http.sessionManagement method will be used for session handling in SecurityConfig class
+
+server.servlet.session.timeout = 20m :- property can use used for setting session timout in application properties file
+maximumsessions(1) & .maxSessionsPreventsLogin(true) - to restrict conncurrent session to specified number
+
+If we use HTTPS protocol, hackers cant steal the session ID. Https prevents Session Hijacking.
+Session Hijacking can be prevented by having sesson timeout for less time.
+
+Session Fixation can be avoided by creating a new session or chaning the session ID when the user logs in.
+
+Authentication Events:
+----------------------
+
+To handle events after success or failure of authentication. We have to create a bean with annotation @Component and use AuthenticationSuccessEvent (onSuccess(AuthenticationSuccessEvent event)) and AbstractAuthenticationFailureEvent (onFailure AbstractAuthenticationFailureEvent event )by annotating @EventListener in the respective methods.
+
+GrandedAuthority Interface 
+We can use the Bean GrantedAuthorityDefaults by having our own prefix for a role instead of having default prefx "ROLE_"
+
+logging.level.org.springframework.security ---  to show all the filters
+We can implement Filter or GenericFilterBean(capable or reading environment variables) or OncePerRequestFilter interface for customized filter.
+
+***************************************************************************************************************************************************************************************
+
+AUTHORIZATION:
+##############
+
+GrantedAuthority interface is used by SimpleGrantedAuthority class.
+Authority is like a individual privillage or action. Role is a group of previleges/actions
+
+Methods for Authority:
+----------------------
+hasAuthority() :- Accepts single authority
+hasAnyAuthority() :- Accepts multiple authority
+access()
+
+Methods for Roles:
+----------------------
+hasRole() :- Accepts single role
+hasAnyRole() :- Accepts multiple roles
+access()
+
+We can have our own prefix for role instead of ROLE_
+@Bean 
+static GrantedAuthorityDefaults grantedAuthorityDefaults(){
+	return new GrantedAuthorityDefaults("MYPREFIX_");
+}
+
+Method Level Security:
+
+---------------------
+It has 2 usages
+1) Invocation Authorization - Validates whether someone can invoke a method based on roles/authorities. @PreAuthorize("hasRole('Admin')")
+2) Filtering authorization  - Validates what a method can receive through its parameters and what the invoker can receive back from the method post business logic execution. @PreAuthorize("#username == authentication.principal.username")
+
+@EnableMethodSecurity - To enable method level security on top of the configuration class.
+
+@Configuration
+@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
+public class ProjectSecurityConfig{
+}
+
+We can also enable method level on top of the SpringBootApplication
+
+Invocation Authorization:
+------------------------
+It offers 3 styles 1)prePostEnabled, 2)securedEnabled 3) jsr250Enabled
+
+prePostEnabled :-  @PreAuthorize, @PostAuthorize
+securedEnabled :-  @Secured
+jsr250Enabled  :-  @RoleAllowed
+
+@PreAuthorize("hasAuthority('ViewLoans')")
+@PreAuthorize("hasRole('ADMIN')")
+
+@PostAuthorize("returnObject.userName == authentication.principal.username")
+
+We can apply Method Security in methods in any layer for extra security
+
+Filtering authorization:
+------------------------
+@PreFilter - used to filter the objects. Its parameter should be collection of objects.
+@PostFilter - used to filter the data before sending response
+
+@PreFilter("filterObject.contactName != 'Test'") :- Here filterObject should be of type Collection
+public List<Contact> saveContact(@RequestBody List<Contact> contacts){
+
+}
+We can club @Prefilter and @PostFilter
+
+***************************************************************************************************************************************************************************************
+
+FILTERS:
+########
+
+After filters are executed the request will be forwared to Dispatcher Servlet.
+
+Custom FIlters are used for Input Validation, Tracing, Auditing & Reporting, Logging of input like IP Address, Encryption & Decryption.
+
+Some inbuilt filters are 
+UserNamePasswordAuthenticationFilter
+BasicAuthenticationFilter
+DefaultLoginPageGeneratingFilter
+
+We can create custom filters by implementing Filter Interface and by extending abstract classes GenericFilterBean or OncePerRequestFilter which already extends GenericFilterBean.
+OncePerRequestFilter  :- Filter will execute only once for each request.
+
+We can specify when our filter to execute in the SecurityFilterChain defined in @Configuration class as below:
+
+addFilterBefore(customFilterClassObject, InbuildFilter.class)
+addFilterAfter(customFilterClassObject, InbuildFilter.class)
+addFilterAt(customFilterClassObject, InbuildFilter.class)
+addFilter(customFilterClassObject) :- For this we have mention @Order(3) on top of the CustomFilter Class
+
+***************************************************************************************************************************************************************************************
+
+JWT TOKEN:
+##########
+
+JWT Token has 3 parts : header, payload and signature
+header has information like what algorithm used and like that
+payload : has info about user, created , expiration details
+signature is crerated by using formula HMACSHA256(baseUrlEncode(header) + "." + baseUrlEncode(payload), secret)
+
+Steps to create JWT TOken:
+--------------------------
+1) Create Filters for generating JWTToken and validating JWT Token by extending OncePerRequestFilter.
+2) Add addFilterAfter(JWTCreateFilterObj, BasicAuthenticationFilter.class) : For creating JWT token after login success
+3) Add addFilterBefore(JWTValidateFilterObj, BasicAuthenticationFilter.class) : For validating JWT token after login success
+
+***************************************************************************************************************************************************************************************
+
+OAUTH2: Open Authorization
+######
+
+OAuth2 has grant types as below
+*) Authorization Code
+*) PKCE
+*) Client Credentials
+*) Device Code
+*) Refresh Token
+*) Implicit Flow(Legacy)
+*) Password Grand(Legacy) 
+
+1)AuthorizationCode - Flow will be by 2 types 
+	1) To get the authorizaton code(clientId, response_type="code", scope(READ, WRITE etc),state(CSRF token to protect from CSRF attacks), redirect_uri)  
+	2) Then to get access token(clientId , clientSecret , authcode, grant_type="authorization_code", redirect_uri). In both redirect_uri needs to be send
+2)Implict Grand Flow - (client_id,redirect_uri,scope,state, reponse_type="token"). ClientSecret is not involved since it is a get request. Here only one request to auth server to get the token. Its not secure as the token value will be redirected in the url.
+3)Proof Key For Code Exchange(PKCE) -- Used for public clients(navtive and SPA) as public clients cannot securely store a Clinet Secret. Using code_verifier only we code_challenge is created by using the code_challenge_method.
+	1) To get Authorization code (clientId, redirect_uri, scope, state, reponse_type="code", code_challenge, code_challenge_method=SH256). Authorization Server stores the code_challenge and sends the authorization code.
+	2) To get access token(clientId , clientSecret , code, grant_type="authorization_code", code_verifier)code_challenge is the has representation of code_verifier. Auth Server verifies the code_challenge by the code_verifier which is send now and if valid will send the access token. clientId & clientSecret are optional.
+4)Password Grant Type -- Here user credentials  is shared. Used if Auth Server, Resource server and client belongs to same origanization as user credentials are shared.
+	1) To get access toaken (client_id, client_secret, scope, grant_type="password" username & password)
+5) Client Credentials Grant Type :- Used when no end user involved
+	1) (client_id, client_secret, scope, grant_type="client_credentials"). We can use this flow if there are no user and ui involved.
+6) Refreh Token Grant Flow: 
+	*) When using AuthorizationCode & PKCE grant flow we will get access token and refresh token.
+	*) When accessToken is expired refresh Token grant flow will be initiated using refresh token.
+	*) client_id, client_secret, refresh_token, scope, grant_type ="refresh_token"
+	*) offline_access scope is used to get a refresh token that never expires.
+
+Token Validation:
+-----------------
+Best approach is JWKS
+*) Auth server will use a private key and issue a token. The resourse server have to download the public key corresponding to the private key.
+*) Using the public key the resourse server can validate the given digital signature of the token.
+
+OpenID Connect:
+---------------
+
