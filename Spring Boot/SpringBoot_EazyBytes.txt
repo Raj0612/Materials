@@ -1,0 +1,652 @@
+EazyBytes
+*********
+Introduced in April 2014
+Spring Context
+BeanFactory
+ApplicationContext
+
+AnnotationConfigApplicationContext
+ClassPathXMLApplicationContext
+
+Bean can be created with Annotation @Bean, @Component(Should be added above the class)
+@ComponentScan - Added above the Configuration classes. Instruct Spring where to find the classes marked with sterotype annotations
+
+Exception:
+----------
+NoUniqueBeanDefinitionException - To resolve context.getBean("beanName", ClassName.class);
+NoSuchBeanDefinitionException
+UnSatisfiedDependencyExcpetion
+
+@Component :- Will be given on top of the class to create a bean. Its a sterotype annotation.
+
+Vehicle vehicle1(){
+}
+
+Vehicle vehicle2(){
+}
+
+@Bean(name="audiVehicle")
+Vehicle vehicle1(){
+}
+
+@Bean(name="audiVehicle")
+@Primary
+Vehicle vehicle1(){
+}
+context.getBean("vehicle1", Vehicle.class);
+context.getBean("audiVehicle", Vehicle.class);
+context.getBean(Vehicle.class); -- Return the bean with @Primary annotated if multiple beans are there with the same Return type.
+
+@PostConstruct -- To have control while creating the bean. It will be called after creating the bean by the container. Used mostly in class annotated with @Component class
+@PreDestroy -- SPring will make sure to call this method before clearing & destroying the context.
+context.close() - will clear or close the context.
+
+registerBean() - introduced in Spring 5 in 2017. To add new beans dynamically by programatically
+context.registerBean("beanName", Vehicle.class, supplierFunction);
+context.getBean("beanName", ClassName.class);
+
+@AutoWiring
+-----------
+Wiring beans can be done by below ways
+*)Using Method call
+*)Using method Parameters
+*)Using @Autowired on class fields
+*)Using @Autowired on setter method
+*)Using @Autowired on constructor -- This way is best as we can inject the class as final
+If a class has one constructor, mentioning @Autowired on constructor is optional
+
+Autowired(required = false)
+By default Spring tries autowiring with Class type(by Type). But it will fail if the same class type has multiple beans.
+
+@Qualifier("beanName")
+
+Circular Dependency will happen if 2 beans are waiting for each to create inside the Spring context inorder to do auto-wiring. UnSatisfiedDependencyExcpetion will be thrown
+
+We cannot add sterotype annotation on Interfaces
+
+BEAN SCOPES
+***********
+1)Singleton -- Default Scope. @Scope(BeanDefinition.SCOPE_SINGLETON) -- It will be for bean. Same instance for each bean(per ApplicationContext)not for the entire application
+2)Prototype
+3)Request
+4)Session
+5)Application -- Same as Singleton but instance is for servletContext not for ApplicationContext
+
+AOP
+****
+What - Aspect
+When - Advice
+Which - Pointcut
+Join Point - Defines the event that triggers the execution of an aspect. In Spring it always the method call.
+Target Object - It is the bean that declares the method/pointcut whch is intercepted by an aspect.
+
+Developer want some logic to be executed before each execution of method playMusic() present inside the bean VehicleServices.
+
+Here : some loigc is Aspect, before is Advice, exceuction is Joint Point, playMusic() is Pointcut, VehicleServices is Target Object.
+
+Weaving - Spring creates a proxy object of the bean that will mangage the each call to a method and apply the aspect logic.
+
+Types of Advices:
+-----------------
+Before :- Runs before a matched method execution.
+After Returning :- Runs when a matched method execution completes without error.
+After Throwing :- Runs when a matched method execution exits by throwing an exception.
+After :- Runs no matter how a matched method execution exists.
+Around - ProceedingJointPoint :- Runs around a matched method execution.
+
+@EnableAspectJAutoProxy -  To enable AOP. It will be in the class annotated with @Configuration.
+
+@Aspect - To create the Aspect Bean which will run for matched method. It also will be annotated with @Component.
+@Order
+
+@AfterThrowing(value ="execution(* packageName.*.*(..))", throwing ="ex")
+public void methodName(JoinPoint joinPoint, Exception ex)
+
+@AfterReturning(value ="execution(* packageName.*.*(..))", returning ="retVal")
+public void methodName(JoinPoint joinPoint, Object retVal)
+
+jointPoint.getSignature() -:
+
+To create Aspect by annotation
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface AspectName{
+}
+#######################################################################################################################################################################################
+
+Spring Boot & Spring MVC
+************************
+Servlet container is responsible for converting HTTP messages to ServletRequest and handover to servlet method as a parameter. Apache Tomcat is a servlet container
+Dispatcher Sevelet 
+
+@SpringBootApplication has a combination of @SpringBootConfiguration, @EnableAutoConfiguration, @ComponentScan etc
+
+server.port = 0 : to use random port
+server.servlet.context-path = pathName :-
+spring.thymeleaf.cache = false  :- To disable the caching of thymeleaf templates
+debug = true : To show the AutoConfiguration report
+
+Model will act as an container for front and backend
+ModelAndView is a class which will help to send data along with the view name to UI (return new ModelAndView("redirect:/contact"))
+
+WebMvcConfigurer is used as view resolver.
+
+@RequestParam can be used to map either query param or form data
+(@RequestParam String name , @RequestParam ("name="nameinUI") String name )-- used to bind info from UI and backend. It is the name in form.
+@RequestParam supports attributes like name, required, defaultvalue, value.
+(@RequestParam(required=false) boolean festival)
+
+@PathVariable - used to extract the value from URI. http://localhost:8080/holidays/all
+@GetMapping("/holidays{display}")
+(@PathVariable String display)
+#######################################################################################################################################################################################
+
+Lambok
+******
+If the fields are final. AllArgsConstructor will be generated. If fields are not final NoArgsConstructor will be generated by @Data
+@Data :- Combination of @Setter, @Getter, @ToString, @EqualsAndHashcode, @RequiredArgsConstructor
+@Sl4j is also present in Lambok
+#######################################################################################################################################################################################
+
+Validations:
+************
+@Valid -- can be put on fields or method parameters to tell spring boot what needs to be validated
+public String methodName(@Valid PojoClass)
+@NotNull: Checks if a given field is not null but allows empty values & zero elements inside collections.
+@NotEmpty: Checks if a given field is not null and its size/length is greater than zero.
+@NotBlank: Checks if a given field is not null and trimmed length is greater than zero.
+@CreditCardNumber, @Currency , @Length, @URL, @EAN, @ISBN, @Range, @UniqueElements etc : org.hibernate.validator.contraints.*
+#######################################################################################################################################################################################
+
+EXCEPTION HANDLING:
+*******************
+@ControllerAdvice - to handle exceptions across the whole application
+@ExceptionHandler - to define exception handle logic inside a method. @ExceptionHandler(Exception.class) , @ExceptionHandler({NullPointerException.class, IOException.class}) 
+
+#######################################################################################################################################################################################
+
+SPRING SECURITY
+***************
+
+401 - Authentication Fails
+403 - Authorization Fails
+
+spring.security.user.name =  user
+spring.security.user.password = password
+
+http.httpbasic() - for HTTP requests
+http.formLogin() - for requests coming from form
+anyRequest.permitAll(), anyRequest.denyAll()
+requestMatchers("/home").permitAll() , requestMatchers("/assets/**").permitAll() - to give permission for static files such as javascript, css 
+Spring security will block the frame by default. http.headers().frameOptions().disable() - To disable the frame protection
+
+<scope>runtime<scope>  -- To mention add dependency during runtime not at compile time
+
+AuthenticationProvider : TO write our own custom logic to authenticate we should have a class which implements AuthenticationProvider Interface.
+
+Encoding:  ASCII, BASE64, UNICODE
+
+CSRF :- Cross Site Request Forgery
+http.csrf().ignoringRequestMatchers("/path").ignoringRequestMatchers("path2") --- To disable csrf protection for the path specified
+
+spring.jpa.properties.javax.persistence.validation.mode = none :- To disable javax validation
+#######################################################################################################################################################################################
+
+SPRING JDBC
+************
+Spring provides many templates for JDBC related activites. The famous ones are JdbcTemplate, NamedParameterJdbcTemplate(Instead of ? we can map the parameter name)
+The instance of JdbcTemplate are thread safe in nature
+
+jdbcTemplate.update(query) -- For stored procedures, for update queries
+spring.jdbc.template.* = : For customize 
+spring.jdbc.template.max-rows = 500 : 
+
+RowMapper :- interface used to map a row with the POJO class(user-defined class). It iterates the ResultSet internally and adds it into the collection. It has one method mapRow which accepts ResultSet instance and int as parameters.
+
+BeanPropertyRowMapper -  used when colum name in table and model class field is same. 
+var rowMapper = BeanPropertyRowMapper.newInstance(ClassName.class) ;  jdbcTemplate.query(sql, rowMapper);
+jdbcTemplate.execute(query) -- For DDL statements
+jdbcTemplate.queryForObject("query", ReturnTypeClass.class);
+
+#######################################################################################################################################################################################
+SPRING DATA JPA
+****************
+@Repository - Repository interface doesnt provide any method.(Marker Interface)
+@EnableJpaRepositories("packageName") :-on top of Spring Application
+@EntityScan("packageName")
+@MappedSuperClass - To include the Parent class fields
+@Enumerated(EnumType.String) -- To indicate the JPA the field is enum and consider as varchar
+@Trasient :- Do not consider this field for any database operations
+
+CrudRepository mainly provides CRUD functions.
+ListCrudRepository - is an extension of CurdRepository returning List instead of Iterable where ever applicable.
+PagingAndSortingRepository  - provides methods to do pagination and sorting records.
+ListPagingAndSortingRepository - is an extension of PagingAndSortingRepository returning List instead of Iterable where ever applicable.
+JpaRepository  - JpaRepository will have all the functions of ListCrudRepository and ListPagingAndSortingRepository. It provides some JPA-related methods such as flushing the persistence context and deleting records in a batch.
+MangoRepository  :- For No SQL MangoDB
+
+repository.save - will return the POJO class object with saved primary key, not the integer as in JDBC
+Derived query method :- by Method name spring data will create queries and implemenetation at runtime automatically by parsing these method names. It has 2 components(The introducer, The criteria) separated by BY.  The Introducer clause are find, read, query, count or get. This clause can contain further expressions such as Distinct to set a distinct flag on query. The criteria clause if for conditions on entity properties and concatenate then with And or Or keywords. Using readBy, getBy and queryBy in place of findBy will behave the same.
+Eg) findByAgeLessThan, findByAgeLessThanEqual, findByAgeGreaterThan , findByAgeGreaterThanEqual, findByStartDateBefore, findByStartDateAfter, findDistinctByFirstNameAndLastName, findByFirstNameOrLastName, findByActiveTrue, findByActiveFalse, findByFirstNameIgnoreCase, findByNameEndingWith, findByNameStartingWith, findByAgeIn(Collection<Age> ages)
+
+spring.jpa.properties.hibernate.format_sql =  true :: To read the sql queries in readable format
+
+#######################################################################################################################################################################################
+AUDITING SUPPORTS:
+******************
+Three steps: JPA will automatically add the date and user
+
+Step1:
+------
+@EntityListeners(AuditingEntityListener.class) - on Entity class
+
+@CreatedDate
+@Colum(updateable=false)
+private LocalDateTime createdAt;
+@CreatedBy
+@Colum(updateable=false)
+private String createdBy;
+@LastModifiedDate
+@Colum(insertable=false)
+private LocalDateTime modifiedAt;
+@LastModifiedBy
+@Colum(insertable=false)
+private String modifiedBy;
+
+Step2:
+-----
+Date related info will be fetched from server by JPA but for CreatedBy & ModifiedBy we need to let JPA know how to fetch that by implementing AuditorAware interface like below
+@Component("auditAwareImpl")
+public class AuditAwareImpl implements AuditorAware<String>{
+ @Override
+    public Optional<String> getCurrentAuditor() {
+            return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication().getName());
+    }
+}
+
+Step3:
+-----
+Enable JPA auditing by annotating a configuration class with @EnableJpaAuditing
+#######################################################################################################################################################################################
+
+CUSTOM VALIDATIONS:
+******************
+Step1: Build an annotation which can be used on top of POJO class or on fields
+Step2: Create a class that implements ConstraintValidator interface and overridding the isValid() method
+Step3: Mention the created annotation on fields or class
+#######################################################################################################################################################################################
+
+DATABASE
+***********************
+One-To-One :  A record in one entity is associated with exactly one record in another entity
+
+@OneToOne(fetch=FetchType.EAGER, cascade= CascadeType.ALL, targetEntity= ClassName.class ) 
+@JoinColumn(name="columnName", referencedColumnName="fieldName", nullable=true)
+ClassName variableName;
+
+cascade: - any operations on parent does the same needs to be done on child
+
+@JoinColumn :-used to specify the foreign key column . name - defines the name of the foreign key column, referencedColumnName - indicates the field name inside the target entity class.
+
+fetch
+-----
+By default all ToMany relationships are LAZY and all ToOne relationships are EAGER.
+
+cascade
+-------
+There is no default cascade type in JPA.
+
+CascadeType.PERSIST :- save() or pesist() operations cascade to related entities.
+CascadeType.REFRESH :- the child entity also gets reloaded from the DB whenever the parent entity is refreshed.
+CascadeType.DETACH :-  detach all child entities if a manual detach occurs for parent
+CascadeType.MERGE  :- that related entities are merged when the owning entity is merged.
+CascadeType.REMOVE :- propagates teh removed operations from parent to child entity.
+CascadeType.ALL :- for all the above operations
+
+OneToMany
+---------
+It declares the mappedBy element to indicate the entity that owns the bidirectional relationship.
+@OneToMany(mappedBy = "eazyClass", fetch = FetchType.LAZY,
+          cascade = CascadeType.PERSIST,targetEntity = Person.class)
+ private Set<Person> persons;
+
+ManyToOne
+---------
+The child entity that has the join column is the owner of the relationship. @JoinColumn is used to specify the foreign key column details
+@ManyToOne(fetch = FetchType.LAZY, optional = true)
+@JoinColumn(name = "class_id", referencedColumnName = "classId", nullable = true)
+ private EazyClass eazyClass;
+ 
+ManyToMany
+----------
+Usually mappedBy is used on the owning entity.
+
+@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @JoinTable(name = "person_courses",
+            joinColumns = {
+                    @JoinColumn(name = "person_id", referencedColumnName = "personId")},
+            inverseJoinColumns = {
+                    @JoinColumn(name = "course_id", referencedColumnName = "courseId")})
+ private Set<Courses> courses = new HashSet<>();
+ 
+@ManyToMany(mappedBy = "courses", fetch = FetchType.EAGER,cascade = CascadeType.PERSIST)
+private Set<Person> persons = new HashSet<>();
+
+#######################################################################################################################################################################################
+
+SORTING & PAGINATION
+********************
+Two Types of Sorting in Spring Data JPA
+Static Sorting :- The retrieved data is always sorted by specified columns & directions. The columns and directons are defined at the development time and connot be changed at runtime. List<Person> findByOrderByNameDesc()
+Dynamic Sorting :-We can choose the column & directions at runtime.  Sort sort = Sort.by("name").descending().and(Sort.by("age"));
+
+Pageable for paginating the query results. We can combine both pagination & dynamic sorting with the help of Pageable.
+Pageable pageable = PageRequest.of(0, 5 Sort.by("columnName").descending());
+Page<Person> findByName(String name, Pageable pageable);
+
+#######################################################################################################################################################################################
+
+CUSTOM QUERIES
+**************
+We can write custom queries with the help of below annoatations
+@Query    
+      :- defines queries directly on repository methods. With this annotation we can write queries in the form of JPQL or Native SQL query. While writing native SQL query we need to mention nativeQuery=true inside @Query annotation.
+@NamedQuery 
+	  :- Used to define a JPQL named query. Declared on top of the entity class
+@NamedNativeQuery 
+	  :- Used to define a native SQL named query. Declared on top of the entity class
+
+JPQL
+----
+
+*)Java Pesistence Query Language is a platform independent object oriented query language defined as part of the JPA Java persistence API
+*)JPQL is used to make queries against entities stored in relational database. Its queries resemble SQL queries in syntax, but operate against the JPA entity objects rather than  directly with database tables.
+*) The drawback is it supports a subset of the SQL standard. So it may not be a great choise of complex queries.
+
+@Query("SELECT c FROM Contact c WHERE c.contactId = ?1 " ORDER BY c.createdAt DESC")
+List<Contact> findByIdOrderByCreatedDesc(long id) 
+
+Native SQL Query :- Same as JPQL but we can use the query same as use for database instead of Java Object
+@Query(value = "SELECT * FROM tableName c WHERE c.columnName = :status", nativeQuery = true)
+List<Contact> findByStatus(String status)
+
+List<Contact> findByStatus(@Param("status")String state)
+
+Using @Query we can also use Update, Delete, Insert etc
+
+@Modifying :- Whenever we use queries that change the state of the database, we need to tell Spring Data JPA by annotating the repository method with an additional @Modifying annotation. 
+
+@Transactional:- Any exception will result in rollback of all JPA tranactions with DB for whichever method/class we declare @Transactional.
+
+@NamedQuery:
+------------
+@Entity
+@NamedQuery(name="Contact.findOpenMsgs", query ="SELECT c FROM Contact c WHERE c.status = :status ")
+public class Contact extends BaseEntity{
+
+@NamedNativeQuery:
+-----------------
+@Entity
+@NamedNativeQuery(name="Contact.findOpenMsgsNative", query ="SSELECT * FROM tableName c WHERE c.columnName = :status", resultClass= Contact.class)
+public class Contact extends BaseEntity{
+
+For @NamedQuery as long as the method name inside the Repository class matches with the name of the query we should be good. Where as for @NamedNativeQuery apart from query name and method name match we should also mention @Query(nativeQuery=true) on top of the Repository method.
+
+Spring Data JPA doesn’t support dynamic sorting for native queries. Doing that would require Spring Data to analyze the provided statement and generate the ORDER BY clause in the database-specific dialect.
+
+@SqlResultSetMappings({
+        @SqlResultSetMapping(name = "SqlResultSetMapping.count", columns = @ColumnResult(name = "cnt"))
+})
+@NamedQueries({
+        @NamedQuery(name = "Contact.findOpenMsgs",
+                query = "SELECT c FROM Contact c WHERE c.status = :status"),
+        @NamedQuery(name = "Contact.updateMsgStatus",
+                query = "UPDATE Contact c SET c.status = ?1 WHERE c.contactId = ?2")
+})
+@NamedNativeQueries({
+        @NamedNativeQuery(name = "Contact.findOpenMsgsNative",
+                query = "SELECT * FROM contact_msg c WHERE c.status = :status"
+                ,resultClass = Contact.class),
+        @NamedNativeQuery(name = "Contact.findOpenMsgsNative.count",
+                query = "select count(*) as cnt from contact_msg c where c.status = :status",
+                resultSetMapping = "SqlResultSetMapping.count"),
+        @NamedNativeQuery(name = "Contact.updateMsgStatusNative",
+                query = "UPDATE contact_msg c SET c.status = ?1 WHERE c.contact_id = ?2")
+})
+public class Contact extends BaseEntity{
+
+#######################################################################################################################################################################################
+
+REST SERVICES
+*************
+@RestController :- @Controller + @ResponseBody
+@ResponseBody :- It should be there on top of method for REST services if @Controller is used
+@RequestParam(name= status)
+(@RequestBody Contact contact) :- For request coming in body
+@RequestHeader("name") String Name ) :- To get the data from the header
+
+ResponseEntity<T> :- To club Header information, status, custom object along with body etc, along with RequestBody.
+Response response = new Response();
+response.setStatusCode("200");
+response.setStatusMsg("Message saved successfully");
+
+return ResponseEntity.status(HttpStatus.CREATED).header("isMsgSaved", "true").body(response)
+
+ResponseEntity can be used as request as well as for response.
+
+@RestControllerAdvise :-Used to mark class as REST Controller advice. Along with @ExceptionHandler this can be used to handle exceptions globally
+
+@RestControllerAdvise(annotations = RestController.class) : To indicate hanlde exceptions for the class annotated with @RestController
+
+@CrossOrigin :- Mention on top of the class. @CrossOrigin(origins="http://domain:port")
+
+jakson-dataformat-xml dependency for sending response as XML . produces={MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE}
+
+@JsonProperty 
+-------------
+	  :- On top of the field . While sending the JSON response instead of the filedName it will send the propertyName
+@JsonProperty("propertyName")
+private String filedName;
+
+@JsonIgnore
+-----------
+	  :- To not send the information present inside the given field. This is useful to filter the data which is sensitive or unneccessary in the response.
+@JsonIgnore
+private LocalDateTime createdAt;
+
+we can also use @JsonIgnoreProperties(value={"createdAt"}) on top of POJO class for multiple fields.
+#######################################################################################################################################################################################
+
+CONSUMING REST SERVICES
+***********************
+
+Commonly used are below
+*) OpenFeign 
+		:- tool offered by Spring Cloud project.
+*) RestTemplate
+		:- Deprecated in favor of WebClient
+*)WebClient	
+		:- created as part of Spring Web Reactive module. Will be replacing RestTemplate. Support all modes of invocation like Sync and Async(non-blocking)
+		
+OpenFeign
+---------
+Step 1:
+    We need to create an interface with all details around API that we are going to consume. Inside the interface we need to create method name matching the details of the destination API method we are going to consume.
+	
+	@FeignClient(name = "contact", url = "http://localhost:8080/api/contact", configuration = ProjectConfiguration.class)
+	public interface ContactProxy {
+		@RequestMapping(method = RequestMethod.GET, value = "/getMessagesByStatus")
+		@Headers(value = "Content-Type: application/json")
+		public List<Contact> getMessagesByStatus(@RequestParam("status") String status);
+	}
+Step 2:
+	If we want to send the authentication details, then create a bean with the required details.
+	@Configuration
+	public class ProjectConfiguration {
+	@Bean
+    public BasicAuthRequestInterceptor basicAuthRequestInterceptor() {
+        return new BasicAuthRequestInterceptor("admin@eazyschool.com", "admin");
+		}
+	}
+Step 3:
+	@EnableFeignClients(basePackages = "com.eazybytes.eazyschool.proxy") : We have to annotate this in the Application starting
+Step 4:
+	we are good to use the proxy object to make a Rest call
+	@Autowired
+    ContactProxy contactProxy;
+	
+	@GetMapping("/getMessages")
+    public List<Contact> getMessages(@RequestParam("status") String status) {
+        return contactProxy.getMessagesByStatus(status);
+    }
+
+RestTemplate:
+-------------
+Step 1:
+	We need to create RestTemplate bean along with the authentication details in the configuartion class.
+	@Bean
+    public RestTemplate restTemplate() {
+        RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
+        return restTemplateBuilder.basicAuthentication("admin@eazyschool.com", "admin").build();
+    }
+	
+Step 2:
+	Using RestTemplate methods like exchange(),we can consume a Rest Service.
+    @PostMapping("/saveMsg")
+    public ResponseEntity<Response> saveMsg(@RequestBody Contact contact){
+        String uri = "http://localhost:8080/api/contact/saveMsg";
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("invocationFrom","RestTemplate");
+        HttpEntity<Contact> httpEntity = new HttpEntity<>(contact, headers);
+        ResponseEntity<Response> responseEntity = restTemplate.exchange(uri, HttpMethod.POST,  httpEntity,Response.class);
+        return responseEntity;
+    }
+	
+Webclient:
+----------
+Step 1:
+	We need to create WebClient bean along with the authentication details in the configuartion class.
+	@Bean
+    public WebClient webClient() {
+        return WebClient.builder()
+                .filter(ExchangeFilterFunctions.
+                        basicAuthentication("admin@eazyschool.com", "admin"))
+                .build();
+    }
+Step 2:
+	Using WebClient methods like post(),we can consume a Rest Service.
+	@PostMapping("/saveMessage")
+    public Mono<Response> saveMessage(@RequestBody Contact contact){
+        String uri = "http://localhost:8080/api/contact/saveMsg";
+        return webClient.post().uri(uri)
+                .header("invocationFrom","WebClient")
+                .body(Mono.just(contact),Contact.class)
+                .retrieve()
+                .bodyToMono(Response.class);
+    }
+#######################################################################################################################################################################################	
+SPRING DATA REST & HAL EXPLORER:
+********************************
+HAL - Hypertext Application Language
+
+spring.data.rest.basePath = /data-api :- To give user defined path for HAL explorer
+
+@RepositoryRestResource(path="pathName") : -The way paths of the repositories are exposed. Add on top of the repository class
+
+@RepositoryRestResource(exported= false) :- Dont want to expose repository. Add on top of the repository class
+
+#######################################################################################################################################################################################	
+LOGGING:
+********
+Logback is used for logging by Spring. It is the default one in started pack.
+FATAL is not supported by Logback
+
+For Framework related logging
+-----------------------------
+debug = true :- To print logs till debug(Error, Warn, Info, Debug)
+trace = true :- To print logs till trace(Error, Warn, Info, Debug, Trace)
+
+For custom package and class
+----------------------------
+logging.level.root = INFO  :- For all the classes including custom packages
+logging.level.packageName = ERROR  :- For specific package
+
+To group:
+--------
+logging.group.groupName = package1, package2 
+logging.level.groupName = ERROR
+
+spring.output.ansi.enabled = ALWAYS  :- To print teh logs in color in the terminal
+
+To log in a file:
+-----------------
+Create a xml file under resources eg)logback.xml and have the properties for logging
+#######################################################################################################################################################################################	
+PROPERTIES CONFIGURATION:
+*************************
+Command line  properties is the top priority.
+
+Below is the order of properties from High to Low
+-------------------------------------------------
+Command Line arguments
+ServletConfig init parameters
+ServletContext init parameters
+JNDI attributes from java:comp/env
+Java System Properties (System.getProperties)
+OS Environmental Properties  
+application.properties
+
+Read Properties:
+----------------
+1)Using @Value
+Step 1 :- Define in application properties (projectName.propertyName = "value")
+Step 2 :- Using @Value in the class read the properties. @Value("${projectName.propertyName}").Mostly above the field variable.
+
+2) Using Environment Bean
+	We can also read properties using Environment Bean. Apart from user defined properties , we can read any environment specific properties as well. 
+	
+3) @ConfigurationProperties :- Used to load all the properties which are logically together into a java bean. Define below annotation
+	@PropertySource("claspath:propertyName.properties") :- Can be used to metion the property file name if we are using other than application.properties
+	@ConfigurationProperties(prefix ="prefixName") :-
+	@Validated :- use if we want to perform validations on teh properties based on the violation mentioned on the field.
+#######################################################################################################################################################################################		
+PROFILES:
+*********
+
+spring.config.import = profileName.properties, profileName1.properties
+spring.profiles.active= profileName
+
+create properties file like application_profileName.properties
+
+We can define properties by below ways:
+---------------------------------------
+1) Using spring.profiles.active= profileName inside the properties file
+2) Using the environment variables like below
+	*) export SPRING_PROPFILES_ACTIVE = profileName
+	*) java -jar applicationName.jar
+3) Using System Property
+	*) java "-Dspring-boot.run.profiles=profileName" -jar applicationName.jar
+	*) mvn spring-boot:run "-Dspring-boot.run.profiles=profileName"
+4) By Programmatically invoking the method setAdditionalProfiles("profileName") inside SpringApplication class
+5) Using @ActiveProfiles while doing testing
+	*)@SpringBootTest
+	*)@ActiveProfiles({"profileName"})
+
+Creating Beans based on Active Profile
+--------------------------------------
+@Profile("profileName") on the top of bean class annotated with @Component. (@Profile=!profileName can also be used)
+#######################################################################################################################################################################################		
+ACTUATOR:
+*********
+management.endpoints.web.base-path=somePath :- Path of the Actuator
+management.endpoints.web.exposure.include=* :- To enable all the actuator in Spring
+
+/env :- This path will support GET, POST & DELETE
+/loggers{name} :- This path will support GET, POST
+All other paths will support only GET
+
+/info :- We have to create a bean with info what we want for this path
+#######################################################################################################################################################################################		
+DEPLOYING INTO AWS:
+*******************
+AWS EC2 or AWS Elastic Beanstalk :- Used for deploying APP in AWS

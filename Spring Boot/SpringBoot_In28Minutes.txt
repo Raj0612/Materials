@@ -1,0 +1,584 @@
+SPRING FRAMEWORK: https://github.com/in28minutes/master-spring-and-spring-boot
+*****************
+
+Spring Framework was introduced in 2004.
+var keyword is introduced in JAVA 10. Allows the compiler to infer the type of the variable based on the value assigned.
+
+Modules of Spring Framework:
+----------------------------
+*) Core :- IOC, Dependency Injection, Auto Wiring etc
+*) Web :- Spring MVC etc(Web applications, REST)
+*) Web Reactive :- Spring WebFlux etc
+*) Data Access :- JDBC, JPA, etc
+*) Integration : JMS etc
+*) Security
+*) Testing :- Mock Objects, Spring MVC Test, etc
+*) Spring Cloud
+
+Spring Container:
+-----------------
+Bean Factory
+ApplicationContext
+	ClassPathXMLApplicationContext
+	
+
+Annotations:
+------------
+@Configuration :- Indicates that a class declared one or more @Bean methods 
+@Component :- To indicate that class is a bean. An instance of class will be managed by Spring framework. Used on the class. Autowiring will be done Field, Setter or Constructor Injection.
+@Bean :- Used on method to create bean. Autowiring will be done by method call or method parameters. Recommended for Instantiating Beans for 3rd Party libraries. 
+@ComponentScan("packageName")  :- To tell the application to search for Components in that package
+@Primary :- Indicates that a bean should given preference when multiple candidates are qualified to autowire
+@Qualifier(qualifierName) :- Can be used on a field or parameter for candidate beans when autowiring. Can also be added along with @Component
+	@Component @Qualifier("qualifierName")
+	public class ClassName implements Interface{}
+@PostConstruct :- Defined on top of the method in the Component class, which indicates after intializing the bean call this method.
+@PreDestroy :- Used on top of the method in the Component class, which indicated call this method after bean is destroyed(closed)
+
+Sterotype Annotations:
+----------------------
+@Service :- For Business Logic
+@Controller :- For Controller ie) Web controller
+@Repository :- For DB manipulation
+
+Annotations on CDI:
+-------------------
+@Inject :- Same as @Autowire
+@Named :- Same as @Component
+
+
+Dependency Injection Types for Component:
+----------------------------------------
+1) Constructor based 
+2) Setter based
+3) Field
+
+@Autowire is not mandatory for constructor injection
+	
+Lazy & Eager Initialization:
+----------------------------
+Eager is the default intialization used by Spring Framework.
+@Lazy :- on top of the class
+
+Scopes:
+-------
+@Scope
+
+Types:
+~~~~~~
+Singleton
+Prototype
+#######################################################################################################################################################################################
+
+SPRING MVC:
+************
+logging.level.org.springframework = debug   :- Will give the logs of the Spring framework package(org.springframework)
+logging.level.packageName = info :- Will give the logs of the package(packageName)
+positive Matches :- Will get auto configured
+negative matches :- Will not be auto configured
+
+Dispather Servlet (DispatcherServletAutoConfiguration)
+Spring Boot automatically configures error page for us.(ErrorMvcAutoConfiguration)
+Bean to JSON and Vise versa (JaksonHttpMessageConvertesConfiguration)
+Embedded Servlet Container (EmbeddedWebServerFactoryCustomizerAutoConfiguration)
+
+spring.profiles.active = name :- For setting profiles
+
+@ConfigurationProperties(prefix="prefixName") :- To get the defined properties values in application properties file to the class arributes.
+prefixName.url = value :- Here url is the field name in the class annotated with @ConfigurationProperties(prefix="prefixName") & @Component
+
+Spring Boot Actuator :- Monitor and Manage the application. 
+management.endpoints.web.exposure.include =*  :- Will enable all the endpoints of the actuator
+
+CommandLineRunner :- Implementing this interface in the @Component class will let the code to run automatically during startup of project.
+
+RowMapper :- Mapping ResultSet to Bean
+BeanPropertyRowMapper :- If the bean properties and the database column names are same.
+
+Spring JPA:
+@Transactional : Annotate this on the repository class
+EntityManger is used to manage the Entity
+
+entityMangerObject.merge : for insert update
+entityMangerObject.find(EntityClass.class, id) : To select 
+entityMangerObject.remove(entityObj) : For delete
+
+
+Spring Data JPA:
+To make SPring JPA more simple.
+
+spring.jpa.defer-datasource-initalization=true :- To inform spring run the data.sql after initialiing the tables(Entity), else it will run before initializing the tables
+
+Mostly we use jakarta. classes than Hibernate coz using Hibernate directly would result in a lock in to Hibernate. We cant use other JPA like Toplink for example
+
+
+@ResponseBody :- To send the response in body 
+
+/src/main/resources/META-INF/resources/WEB-INF/jsp/name.jsp
+
+Should add the below in application.properties for redirecting to jsp from controller
+spring.mvc.view.prefix =/WEB-INF/jsp
+spring.mvc.view.suffix = .jsp
+
+We have to add dependency tomcat-embed-jasper to use jsp in our project
+
+@RequestParam :-  To get the request in query(?name=Raj) & Form data
+@SessionAttributes("name") :- Set the attribute in @SessionAttributes & add the same @SessionAttributes("name")  in other controllers so it will be available in the model object there. 
+ModelMap :-  To bind data which will be shared to the client
+
+To add Bootstrap as web jar add the dependency org.webjars.bootstrap & for jquery add org.webjars.jquery
+
+
+VALIDATIONS:
+------------
+
+@Valid :-  Annotation for method level validation. This annotation doesn’t support group validation.
+@Validated :- For group-level, we have to use Spring’s @Validated,
+BindingResult :- is an interface that holds the result of the validation and binding and contains errors that may have occurred. The BindingResult must come right after the model object that is validated or else Spring will fail to validate the object and throw an exception. Spring puts any errors in the BindingResult
+
+spring.mvc.format.date=yyyy-MM-dd   :- mm(small) will be for minute :- To format the date in spring
+#######################################################################################################################################################################################
+
+SPRING BOOT:
+************
+
+@RestController :- @Controller + @ResponseBody
+DispatcherServletAutoConfiguration
+
+@ResponseBody + JaksonHttpMessageConverters :- Converst object to json
+
+@PathVariable :- For capturing the value in the path. 
+@GetMapping(path=helloword/{name}) 
+public HelloWorldBean helloWord(@PathVariable String name){
+
+}
+
+@RequestBody( Class obj) :- To send the object as input
+
+Status Code:
+------------
+404 :- Resource Not Found
+500 :- Server Exception
+400 :- Validation Error
+200 :- Success
+201 :- Created
+204 :- No Content
+301 :- A 301 redirect shows that the requested URL is “permanently” moved to the long URL. Since it is permanently redirected, the browser caches the response, and subsequent requests for the same URL will not be sent to the URL shortening service. Instead, requests are redirected to the long URL server directly.
+302 :- A 302 redirect means that the URL is “temporarily” moved to the long URL, meaning that subsequent requests for the same URL will be sent to the URL shortening service first. Then, they are redirected to the long URL server.
+401 :- UnAuthorized
+400 :- Bad Request such as Validation Error
+429 :- A user has sent too many requests 
+
+ResponseEntity :- Extension of HttpEntity that adds an HttpStatusCode
+
+URI location  = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId()).toUri();
+return ResponseEntity.created(location).build(); :- To return the location in the header(location: URI Location) along with the response code 201.
+
+Exception Handling:
+-------------------
+ResponseStatus(code=HttpStatus.NOT_FOUND) :- Use this on top of User Defined Exception class to send the user defined status code in the response if exception occurs.
+
+Generic Exception:
+-----------------
+@ControllerAdvice :- Annotate on top of the user defined Exception Handling class
+ResonseEntityExceptionHandler :- Extend this class and override the handleException method for user defined error response.
+@ExceptionHandler(Exception.class) :- Annotate on top of handleException method to capture the Exception of type define in the Excpetion.class
+
+Validations:
+------------
+spring-boot-starter-validation :- dependency
+
+@Valid :- Add on the method parameter before the POJO which needs to be validated.
+handleMethodArgumentNotValid() : override this method on the User Defined Exception class which implementing ResonseEntityExceptionHandler. This will be used for if any validation error messages in the fields.
+
+Swagger & Open API:
+-------------------
+springdoc-openapi-starter-webmvc-ui :- Dependency
+url will be  localhost:8080/swagger-ui.html
+localhost:8080/v3/api-docs :- Will give details of all the API
+
+Content Negotiation:
+--------------------
+Same Resource Different Rerepresentation. Consumer can tell the REST API provider what they want using content negotiation.
+Example:
+	Different Content Type (Response as JSON, XML etc)
+	Different Language (English, Dutch etc)
+	
+How to do:
+	Accept Header(MIME types - application/xml, application/json ...)
+	Accept-Language Header(en, nl, fr ....)
+jackson-dataformat-xml :- Dependency for XML response.
+
+Internationalization:
+---------------------
+Use Accept-Language Header for internationalization.
+Steps:
+	1) Create message.properties file for each language
+	2) Autowire MessageSource 
+	3) a]  Locale  locale = LocalContextHolder.getLocale()
+	   b] messageSource.getMessage("propertyName", null, "Default Message", locale)
+	
+
+
+Versioning:
+-----------
+Ways to Implementing
+1) URL :- 
+	http://localhost:8080/v1/api
+	http://localhost:8080/v2/api
+	
+2) Request Parameter  : Amazon 
+	http://localhost:8080/person?version=1
+	http://localhost:8080/person?version=2
+	
+	@GetMapping(path="/person" params="version=1")
+	public Person getFirstVersion(){}
+	
+3) Header :-Microsoft
+	SAME-URL headers=[X-API-VERSION=1]
+	SAME-URL headers=[X-API-VERSION=2]
+	
+	@GetMapping(path="/person" headers="X-API-VERSION=1")
+	public Person getFirstVersion(){}
+	
+4) Media Type :- GitHub aka Content Negotiation or Accept Header. In Header we have to send as Accept:application/vnd.company.app-v1+json
+	SAME-URL produces=application/vnd.company.app-v1+json
+	SAME-URL produces=application/vnd.company.app-v2+json
+	
+	@GetMapping(path="/person" produces="application/vnd.company.app-v1+json")
+	public Person getFirstVersion(){}
+	
+HATEOS(Hyper Media As The Engine of Application State): To send data along with subsequent action links
+------------------------------------------------------
+spring-boot-starter-hateos :- Dependency
+Implementation Options:
+1)Custom Format And Implementation
+2)HAL(JSON Hypertext Application Language)
+
+EntityModel
+
+EntityModel<T> entityModel = EntityModel.of(modelClassObject);
+WebMvcLinkBuilder link = linkTo(methodOn(this.getClass()).methodNameOfAPI());
+entityModel.add(link.withRel("nameOfLink"));
+
+Filtering:
+----------
+
+@JSONProperty(name) :- to use customized name for the field in json response
+
+Two Types of Filtering:
+1) Static Filetering :- @JsonIgnoreProperties, @JsonIgnore . @JsonIgnore :- Annotate on top of the field. @JsonIgnoreProperties("field1", "field2") :- Annotate on top of the POJO class
+2) Dynamic Filtering :- @JsonFilter with FilterProvider. Will be done on the API method.
+	Steps:
+		*) Add @JsonFilter(FilterName) on top of the POJO class
+		*) Add the below code in the API method in controller
+			MappingJacksonValue  mappingJacksonValue = new MappingJacksonValue(object);
+			SimpleBeanPropertyFilter filter = SimpleBeanPropertyFilter.filterOutAllExcept("fieldName", "filedName");
+			FilterProvider filterProvider = new SimpleFilterProvider().addFilter("FilterName", filter);
+			mappingJacksonValue.setFilters(filters);
+			return mappingJacksonValue;
+
+Actuator:
+---------
+spring-boot-starter-actuator :- Dependency
+
+Provides a number of endpoints
+*) beans 
+*) health
+*) metrics 
+*) mappings 
+*) requests details
+etc
+
+management.endpoints.web.exposure.include=* :- To provide all the endpoints of actuator
+
+HAL Explorer:
+-------------
+spring-data-rest-hal-explorer :- Dependency
+
+url is http://localhost:8080/explorer
+#######################################################################################################################################################################################
+
+SPRING AOP:
+***********
+@Aspect :- Annotate on top of the configuration class for Aspect functionality.
+Compile Time
+	1) Aspect :- A combination of Advice, Pointcut
+    2) Advice :- What
+    3) Pointcut :- When(Expression that identifies method calls to be intercepted)
+	   @Before(execution(* packageName.*.*(..))) :- For all the methods for the classes in the package
+    4) Weaver :- Framework that implements AOP
+Run Time:
+	1) Join Point :- When pointcut condition is true, the advice is executed. A specific execution instance of an advice is Join Point.
+	
+@Before :- Do something before a method is called
+@After :- Do something after a method is executed irrespective of  Method executes succesfully or throws an exception.
+@After Returning :- Do something only whenaa method executes succesfully.
+@After Throwing :- Do something only when method throws an exception.
+@Around :- Do something before and after a method execution.
+
+Used Defined Annotation can be used in Aspect for specific methods which we want.
+Create an interface for annotation. and use that annotation in method which we want.
+Pointcut("@annotation(packageName)") :- Given in common annotation class..
+
+
+We can create pointcut for specific beans like below:
+
+@Pointcut("bean(*Service*)")
+public void pointcutOnBean(){} 
+
+
+@Pointcut("@annotation(packageName)")
+public void pointcutByAnnotation(){} 
+
+To create Annotation:
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public interface TractTime {
+}
+#######################################################################################################################################################################################
+
+GRADLE:
+*******
+1) Maven is platform dependent(JAVA) but Gradle is cross Platform tool(JAVA, PYTHON, C/C++, Javascript etc)
+2) Gradle is completely programmable
+3) Build is faster
+4) Gradle also make use of maven repositories
+#######################################################################################################################################################################################
+
+DOCKER:
+*******
+docker --version
+docker container ls
+docker build -t in28min/hello-world-docker:v1 .
+docker image list
+docker run -d -p 5000:5000 in28min/hello-world-docker:v1
+docker build -t in28min/hello-world-docker:v2 .
+docker container run -d -p 5000:5000 in28min/hello-world-docker:v2
+docker build -t in28min/hello-world-docker:v3 .
+docker container run -d -p 5000:5000 in28min/hello-world-docker:v3
+docker build -t in28min/hello-world-docker:v4 
+docker container stop idOfConatiner
+
+-p hostPort:containerPort :- containerPort can be changed by the developer, whereas host port can be changed by anyone
+
+*) OS doesn’t matter
+*) Hardware doesnt matter
+*) Programming language doesnt matter
+
+Docker image is downloaded from Docker Registry(Default: Docker Hub)
+*) Image is a set of bytes
+*) Container is the running version of docker image
+
+Terminology:
+------------
+Docker Image :- A package representing specific version of your application(or software)
+Docker Registry :- A place to store your docker images.
+Docker Hub :- A registry to host docker images.
+Docker Repository :- Docker images for a specific app(tags are used to differentiate different images)
+Docker Container :- Runtime instance of a docker image.
+Dockerfile :- File with instructions to create a Docker image.
+
+# Dockerfile Examples
+
+## Docker commands
+- docker build -t in28min/hello-world-docker:v1 .
+
+## Dockerfile - 1 - Creating Docker Images:
+-------------------------------------------
+FROM openjdk:21-jdk-slim
+COPY target/*.jar app.jar
+EXPOSE 5000
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+
+## Dockerfile - 2 - Build Jar File - Multi Stage:
+-------------------------------------------------
+FROM maven:3.9.6-amazoncorretto-21-al2023 AS build
+WORKDIR /home/app
+COPY . /home/app
+RUN mvn -f /home/app/pom.xml clean package
+
+FROM openjdk:21-jdk-slim
+EXPOSE 5000
+COPY --from=build /home/app/target/*.jar app.jar
+ENTRYPOINT [ "sh", "-c", "java -jar /app.jar" ]
+
+```
+
+## Dockerfile - 3 - Caching:
+----------------------------
+FROM maven:3.9.6-amazoncorretto-21-al2023 AS build
+WORKDIR /home/app
+
+COPY ./pom.xml /home/app/pom.xml
+COPY ./src/main/java/com/in28minutes/rest/webservices/restfulwebservices/RestfulWebServicesApplication.java	/home/app/src/main/java/com/in28minutes/rest/webservices/restfulwebservices/RestfulWebServicesApplication.java
+
+RUN mvn -f /home/app/pom.xml clean package
+
+COPY . /home/app
+RUN mvn -f /home/app/pom.xml clean package
+
+FROM openjdk:21-jdk-slim
+EXPOSE 5000
+COPY --from=build /home/app/target/*.jar app.jar
+ENTRYPOINT [ "sh", "-c", "java -jar /app.jar" ]
+
+#######################################################################################################################################################################################
+
+REACT:
+******
+ES Scriot :- EcmaScript
+
+React is a Single Page Application created by Facebook
+
+Commands:
+---------
+npm start :- Run the application in development mode.
+npm run build :- Buid a production deployable unit
+npm test :- Run unit tests
+npm install --save react-router-dom :- Add a dependency to our project 	
+
+First component to load in React app is App Component.
+
+Component should always start with Capital letter
+
+State can be used in function component from React 16.8 by using Hooks. Before this version state can be used only in class component.
+useState hook allows adding state to Function components.
+
+React projects use JSX(Javascript XML) for presentation.
+
+JSX(Javascript XML)
+	*) Close Tags are mandatory.
+	*) Only one top level tag allowed
+Babel :- Converts JSX to JS. It is a javascript compiler.
+
+To use a class or component from a different file or module , we need to import it
+*) Default import :- Import Component from './path'
+*) Named import :- Import {Component} from './path'
+While importing from React use {} , without brace will import the default component
+
+Options of Styling:
+-------------------
+*) Style
+	Error : <button style={border-radius:30px}>
+	Correct : <button style={{borderRadius:"30px"}}>
+*) className
+	Define the cssClass in our component CSS file.
+
+useState:
+---------
+State is used to contain data or information about the component. Each instance of component has its own state.
+
+const [count, setCount] = useState(0); 
+setCount(count + 1);
+
+useState return two things
+	*) Current State
+	*) A function to update state
+
+props:
+------
+Used for things that remain a constant during lifetime of a component.
+
+Using propTypes we can do a validation constraints for the property type, set default values for the property
+
+Router:
+-------
+npm install react-router-dom
+
+<BrowserRouter>
+	<Routes>
+		<Route path='/' element{<LoginComponent>}></Route>
+		<Route path='/login' element{<LoginComponent>}></Route>
+		<Route path='/welcome:username' element{<WelcomeComponent>}></Route>  //To capture the param in the url 
+		<Route path='*' element{<ErrorComponent>}></Route> // To naviagte to ErrorComponent if path doesnt match
+	</Routes>	
+</BrowserRouter>
+
+useNavigate() :- Ths hook is used to navigate to the path mentioned 
+
+const navigate = useNavigate();
+navigate("/path")
+
+useParams() :- To capture the params in the url
+
+const params = useParams();
+params.userName 
+	or
+const{userName} = useParams();
+console.log(useName);
+	
+use Link instead of <a href="/path", beacause <a> will refresh the entire page
+<Link href=""/> Link can be used in component which is part of Router Component
+
+createContext :- This hook is used to share a state across all components.
+const context = createContext();
+
+Navigate :- Used to Navigate to the path
+<Navigate to="/"/>
+
+Axios: Used to call Rest API
+------
+npm install axios
+axios.get("apiPath").then((resp)=> {}).catch((error)=>{}).finally(()=>{});
+
+useEffect() :- This hook is used load on the page startup(Component is ready)
+
+Formik: To Create form in React
+-------
+#######################################################################################################################################################################################
+
+MOCKITO:
+********
+2 ways of unit testing
+1) Stubs
+2) Mokito
+
+#######################################################################################################################################################################################
+Spring Security:
+****************
+
+Spring secuirty enables form based authentication by default.
+
+SecurityContextHolder.getContext().getAuthentication() returns the Authentication object.
+
+CSRF:- Cross Site Request Forgery
+-----
+
+X-CSRF-TOKEN is the header used for CSRF
+
+Protect from CSRF:
+------------------
+1) Synchronizer Token Pattern :- A token created for each request.
+2) SameSite cookie :- (Set-Cookie: SameSite=Strict)
+	server.servlet.session.cookie.same-site=strict
+	
+CORS: Cross Origin Resource Sharing
+----
+1) Global Configuration: For all controllers in one place
+	addCorsMapping callback method in WebMvcConfigurer
+2) Local Configuration :- Added in the controller
+	@CrossOrigin :- Default it will allow from all origins
+	@CrossOrigin(origins ="") :- Allow from specific origins
+	
+By default spring security disables frames. 
+http.headers().frameOptions().sameOrigin() :- Specify to allo any request that comes from the same origin to frame this application.
+
+Spring Security Authorization:
+------------------------------
+1) Global Security : authorizeHttpRequests
+	*)requestMatchers("/users").hasRole("USER")
+		hasRole, hasAuthority, hasAnyAuthority, isAuthenticated
+2) Method Security(@EnableMethodSecurity)
+	*)@Pre and @Post Annotations
+		@PreAuthorize("hasRole('USER') and #userName==authentication.name")
+		@PostAuthorize("returnObject.userName=='in28Minutes'")
+3) JSR-250 Annotations
+	@EnableMethodSecurity(jsr250Enabled=250)
+	@RolesAllowed({"ADMIN", "USER"})
+4) @SecuredAnnotation
+	@EnableMethodSecurity(securedEnabled=true)
+	@Secured({"ADMIN", "USER"})
+
