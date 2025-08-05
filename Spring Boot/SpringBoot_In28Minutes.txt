@@ -19,19 +19,21 @@ Spring Container:
 -----------------
 Bean Factory
 ApplicationContext
-	ClassPathXMLApplicationContext
+	-- ClassPathXMLApplicationContext
 	
 
 Annotations:
 ------------
 @Configuration :- Indicates that a class declared one or more @Bean methods 
-@Component :- To indicate that class is a bean. An instance of class will be managed by Spring framework. Used on the class. Autowiring will be done Field, Setter or Constructor Injection.
+@Component :- To indicate that class is a bean. An instance of class will be managed by Spring framework. Used on the class. Autowiring will be done by Field, Setter or Constructor Injection.
 @Bean :- Used on method to create bean. Autowiring will be done by method call or method parameters. Recommended for Instantiating Beans for 3rd Party libraries. 
 @ComponentScan("packageName")  :- To tell the application to search for Components in that package
-@Primary :- Indicates that a bean should given preference when multiple candidates are qualified to autowire
+@Primary :- Indicates that a bean should be given preference when multiple candidates are qualified to autowire
 @Qualifier(qualifierName) :- Can be used on a field or parameter for candidate beans when autowiring. Can also be added along with @Component
-	@Component @Qualifier("qualifierName")
-	public class ClassName implements Interface{}
+	@Component
+	@Qualifier("qualifierName")
+	public class ClassName implements Interface{
+	}
 @PostConstruct :- Defined on top of the method in the Component class, which indicates after intializing the bean call this method.
 @PreDestroy :- Used on top of the method in the Component class, which indicated call this method after bean is destroyed(closed)
 
@@ -77,7 +79,7 @@ logging.level.packageName = info :- Will give the logs of the package(packageNam
 positive Matches :- Will get auto configured
 negative matches :- Will not be auto configured
 
-Dispather Servlet (DispatcherServletAutoConfiguration)
+Dispather Servlet -- (DispatcherServletAutoConfiguration)
 Spring Boot automatically configures error page for us.(ErrorMvcAutoConfiguration)
 Bean to JSON and Vise versa (JaksonHttpMessageConvertesConfiguration)
 Embedded Servlet Container (EmbeddedWebServerFactoryCustomizerAutoConfiguration)
@@ -86,6 +88,14 @@ spring.profiles.active = name :- For setting profiles
 
 @ConfigurationProperties(prefix="prefixName") :- To get the defined properties values in application properties file to the class arributes.
 prefixName.url = value :- Here url is the field name in the class annotated with @ConfigurationProperties(prefix="prefixName") & @Component
+
+Dependency for ConfigurationProperties:
+---------------------------------------
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-configuration-processor</artifactId>
+    <optional>true</optional>
+</dependency>
 
 Spring Boot Actuator :- Monitor and Manage the application. 
 management.endpoints.web.exposure.include =*  :- Will enable all the endpoints of the actuator
@@ -96,20 +106,22 @@ RowMapper :- Mapping ResultSet to Bean
 BeanPropertyRowMapper :- If the bean properties and the database column names are same.
 
 Spring JPA:
+-----------
 @Transactional : Annotate this on the repository class
 EntityManger is used to manage the Entity
 
-entityMangerObject.merge : for insert update
+entityMangerObject.merge : for insert, update
 entityMangerObject.find(EntityClass.class, id) : To select 
 entityMangerObject.remove(entityObj) : For delete
 
 
 Spring Data JPA:
-To make SPring JPA more simple.
+----------------
+To make Spring JPA more simple.
 
 spring.jpa.defer-datasource-initalization=true :- To inform spring run the data.sql after initialiing the tables(Entity), else it will run before initializing the tables
 
-Mostly we use jakarta. classes than Hibernate coz using Hibernate directly would result in a lock in to Hibernate. We cant use other JPA like Toplink for example
+Mostly we use jakarta classes than Hibernate coz using Hibernate directly would result in a lock in to Hibernate. We cant use other JPA like Toplink for example
 
 
 @ResponseBody :- To send the response in body 
@@ -133,7 +145,7 @@ VALIDATIONS:
 ------------
 
 @Valid :-  Annotation for method level validation. This annotation doesn’t support group validation.
-@Validated :- For group-level, we have to use Spring’s @Validated,
+@Validated :- For group-level or want to apply validation at the class level, we have to use Spring’s @Validated,
 BindingResult :- is an interface that holds the result of the validation and binding and contains errors that may have occurred. The BindingResult must come right after the model object that is validated or else Spring will fail to validate the object and throw an exception. Spring puts any errors in the BindingResult
 
 spring.mvc.format.date=yyyy-MM-dd   :- mm(small) will be for minute :- To format the date in spring
@@ -159,7 +171,6 @@ Status Code:
 ------------
 404 :- Resource Not Found
 500 :- Server Exception
-400 :- Validation Error
 200 :- Success
 201 :- Created
 204 :- No Content
@@ -510,11 +521,17 @@ params.userName
 const{userName} = useParams();
 console.log(useName);
 	
-use Link instead of <a href="/path", beacause <a> will refresh the entire page
-<Link href=""/> Link can be used in component which is part of Router Component
+use Link To instead of <a href="/path", beacause <a> will refresh the entire page
+<Link to=""/> Link can be used in component which is part of Router Component
 
 createContext :- This hook is used to share a state across all components.
-const context = createContext();
+export const context = createContext();
+
+To use in another component:
+
+import the context in the component
+import {context} from 'path'
+cont cont = useContext(context)
 
 Navigate :- Used to Navigate to the path
 <Navigate to="/"/>
