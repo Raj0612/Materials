@@ -390,6 +390,8 @@ private String password;
 DATABASE
 ********
 
+spring.jpa.properties.javax.persistence.validation.mode = none   :- To disable javax bean validations by the Spring Data JPA. If POJO class and Enity class are single.
+
 @Trasient : Dont consider the annotated field for database operations
 One-To-One :  A record in one entity is associated with exactly one record in another entity
 
@@ -401,7 +403,9 @@ ClassName variableName;
 @JoinColumn(name="address_id", referencedColumnName="addressId", nullable=true)
 Address address;
 
-cascade: - any operations on parent does the same needs to be done on child
+Here address_id: - is the column name in Parent table. addressId: - is the field name in Address class.
+cascade: - any operations on parent does the same needs to be done on child.
+
 
 @JoinColumn :-used to specify the foreign key column . name - defines the name of the foreign key column, referencedColumnName - indicates the field name inside the target entity class.
 
@@ -411,43 +415,65 @@ By default all ToMany relationships are LAZY and all ToOne relationships are EAG
 
 cascade
 -------
+Cascade configuration option accepts an array of Cascade Types.
 There is no default cascade type in JPA.
 
 CascadeType.PERSIST :- save() or pesist() operations cascade to related entities.
 CascadeType.REFRESH :- the child entity also gets reloaded from the DB whenever the parent entity is refreshed.
-CascadeType.DETACH :-  detach all child entities if a manual detach occurs for parent
+CascadeType.DETACH :-  detach all child entities if a manual detach occurs for parent in session.
 CascadeType.MERGE  :- that related entities are merged when the owning entity is merged.
 CascadeType.REMOVE :- propagates teh removed operations from parent to child entity.
 CascadeType.ALL :- for all the above operations
 
+OneToMany and ManyToOne always travel each other. The entity which has OneToMany with other entity is parent and the entity which has ManyToOne with other entity is child.
+
+A class has many students and a many students in one class.
+
 OneToMany
----------
+=========
 It declares the mappedBy element to indicate the entity that owns the bidirectional relationship.
+
+class Course{
 @OneToMany(mappedBy = "eazyClass", fetch = FetchType.LAZY,
           cascade = CascadeType.PERSIST,targetEntity = Person.class)
  private Set<Person> persons;
+}
 
 ManyToOne
----------
+=========
 The child entity that has the join column is the owner of the relationship. @JoinColumn is used to specify the foreign key column details
 @ManyToOne(fetch = FetchType.LAZY, optional = true)
 @JoinColumn(name = "class_id", referencedColumnName = "classId", nullable = true)
- private EazyClass eazyClass;
- 
-ManyToMany
-----------
-Usually mappedBy is used on the owning entity.
+private EazyClass eazyClass;
 
+Points:
+*******
+@JoinColumn is used to specify the foreign key colum detials.
+optional = true : - Means the column in the table can be nullable.
+Use @Getter & @Setter instead of @Data of lambok in entity having oneToMany and ManyToOne
+ 
+ManyToMany:
+==========
+Usually mappedBy is used on the owning entity. Many Courses for a student and many student for a course.
+
+class Person{
 @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @JoinTable(name = "person_courses",
             joinColumns = {
                     @JoinColumn(name = "person_id", referencedColumnName = "personId")},
             inverseJoinColumns = {
                     @JoinColumn(name = "course_id", referencedColumnName = "courseId")})
- private Set<Courses> courses = new HashSet<>();
+private Set<Courses> courses = new HashSet<>();
+ }
  
+class Courses{
 @ManyToMany(mappedBy = "courses", fetch = FetchType.EAGER,cascade = CascadeType.PERSIST)
 private Set<Person> persons = new HashSet<>();
+}
+Notes:
+******
+mappedBy will be in the entity which is owning the relationship. Without courses no person can enroll to course. So Course entity is the owner.
+In ManyToMany we are creating a new table because if new table is not there then the Person table it will be having many records with same person name.
 
 #######################################################################################################################################################################################
 
@@ -457,9 +483,21 @@ Two Types of Sorting in Spring Data JPA
 Static Sorting :- The retrieved data is always sorted by specified columns & directions. The columns and directons are defined at the development time and connot be changed at runtime. List<Person> findByOrderByNameDesc()
 Dynamic Sorting :-We can choose the column & directions at runtime.  Sort sort = Sort.by("name").descending().and(Sort.by("age"));
 
-Pageable for paginating the query results. We can combine both pagination & dynamic sorting with the help of Pageable.
+repository.findAll(Sort.by("param").descending());
+
+Pageable interface for paginating the query results. We can combine both pagination & dynamic sorting with the help of Pageable.
 Pageable pageable = PageRequest.of(0, 5 Sort.by("columnName").descending());
 Page<Person> findByName(String name, Pageable pageable);
+
+example: Page<Contact> msgPage = repositoryObj.findByName(columnName, pageable);
+msgPage.getTotalElements();
+msgPage.getTotalPages();
+
+Note:
+-----
+
+Here 0 is the page number. 5 is total records per page.
+When Pageable is used the return type of the repository method should be of Page.
 
 #######################################################################################################################################################################################
 
@@ -487,7 +525,7 @@ Native SQL Query :- Same as JPQL but we can use the query same as use for databa
 @Query(value = "SELECT * FROM tableName c WHERE c.columnName = :status", nativeQuery = true)
 List<Contact> findByStatus(String status)
 
-List<Contact> findByStatus(@Param("status")String state)
+List<Contact> findByStatus(@Param("status")String state): use this when the method param name is different than the placeholder in query.
 
 Using @Query we can also use Update, Delete, Insert etc
 
@@ -495,17 +533,28 @@ Using @Query we can also use Update, Delete, Insert etc
 
 @Transactional:- Any exception will result in rollback of all JPA tranactions with DB for whichever method/class we declare @Transactional.
 
+@Transactional
+@Modifying
+@Query("UPDATE Contact c SET c.status= ?1 WHERE c.conatctId = ?2")
+int updateStatusById(String status, int id)
+
+We can place all the queries in the one class (Entity class ) by using @NamedQuery & @NamedNativeQuery
+
 @NamedQuery:
 ------------
 @Entity
 @NamedQuery(name="Contact.findOpenMsgs", query ="SELECT c FROM Contact c WHERE c.status = :status ")
 public class Contact extends BaseEntity{
+}
 
 @NamedNativeQuery:
 -----------------
 @Entity
 @NamedNativeQuery(name="Contact.findOpenMsgsNative", query ="SSELECT * FROM tableName c WHERE c.columnName = :status", resultClass= Contact.class)
 public class Contact extends BaseEntity{
+}
+
+Here findOpenMsgs &  findOpenMsgsNative are the name of the method in repository class.
 
 For @NamedQuery as long as the method name inside the Repository class matches with the name of the query we should be good. Where as for @NamedNativeQuery apart from query name and method name match we should also mention @Query(nativeQuery=true) on top of the Repository method.
 
@@ -526,11 +575,12 @@ Spring Data JPA doesn’t support dynamic sorting for native queries. Doing that
                 ,resultClass = Contact.class),
         @NamedNativeQuery(name = "Contact.findOpenMsgsNative.count",
                 query = "select count(*) as cnt from contact_msg c where c.status = :status",
-                resultSetMapping = "SqlResultSetMapping.count"),
+                resultSetMapping = "SqlResultSetMapping.count"),  :-- This is for Pagination
         @NamedNativeQuery(name = "Contact.updateMsgStatusNative",
                 query = "UPDATE contact_msg c SET c.status = ?1 WHERE c.contact_id = ?2")
 })
 public class Contact extends BaseEntity{
+}
 
 #######################################################################################################################################################################################
 
@@ -580,14 +630,16 @@ CONSUMING REST SERVICES
 
 Commonly used are below
 *) OpenFeign 
-		:- tool offered by Spring Cloud project.
+		:- tool offered by Spring Cloud project. Its similar to Repositories withSpring Data JPA. We just need to write interfaces but not implemenetation code. 
 *) RestTemplate
 		:- Deprecated in favor of WebClient
-*)WebClient	
+*) WebClient	
 		:- created as part of Spring Web Reactive module. Will be replacing RestTemplate. Support all modes of invocation like Sync and Async(non-blocking)
 		
 OpenFeign
 ---------
+
+Add @EnableFeignClients on top main application class.
 Step 1:
     We need to create an interface with all details around API that we are going to consume. Inside the interface we need to create method name matching the details of the destination API method we are going to consume.
 	
@@ -665,6 +717,8 @@ Step 2:
 #######################################################################################################################################################################################	
 SPRING DATA REST & HAL EXPLORER:
 ********************************
+
+Spring Data Rest : For creating the APIs for the methods in the Repositories
 HAL - Hypertext Application Language
 
 spring.data.rest.basePath = /data-api :- To give user defined path for HAL explorer
@@ -672,6 +726,10 @@ spring.data.rest.basePath = /data-api :- To give user defined path for HAL explo
 @RepositoryRestResource(path="pathName") : -The way paths of the repositories are exposed. Add on top of the repository class
 
 @RepositoryRestResource(exported= false) :- Dont want to expose repository. Add on top of the repository class
+
+Spring HATEOS:
+--------------
+To send embedded links in the response
 
 #######################################################################################################################################################################################	
 LOGGING:
@@ -694,11 +752,12 @@ To group:
 logging.group.groupName = package1, package2 
 logging.level.groupName = ERROR
 
-spring.output.ansi.enabled = ALWAYS  :- To print teh logs in color in the terminal
+spring.output.ansi.enabled = ALWAYS  :- To print the logs in color in the terminal
 
-To log in a file:
------------------
+To log in a custom file:
+------------------------
 Create a xml file under resources eg)logback.xml and have the properties for logging
+
 #######################################################################################################################################################################################	
 PROPERTIES CONFIGURATION:
 *************************
@@ -721,12 +780,19 @@ Step 1 :- Define in application properties (projectName.propertyName = "value")
 Step 2 :- Using @Value in the class read the properties. @Value("${projectName.propertyName}").Mostly above the field variable.
 
 2) Using Environment Bean
-	We can also read properties using Environment Bean. Apart from user defined properties , we can read any environment specific properties as well. 
+	We can also read properties using Environment Bean. Apart from user defined properties , we can read any environment specific properties as well(Defined in Environment Properties as well as in the properties file). 
+Step 1:- Autowire the Environmenta
+		@Autowired
+		private Environment environment;
+Step 2:- get the property by using environment.getProperty("propertyName");
 	
-3) @ConfigurationProperties :- Used to load all the properties which are logically together into a java bean. Define below annotation
-	@PropertySource("claspath:propertyName.properties") :- Can be used to metion the property file name if we are using other than application.properties
-	@ConfigurationProperties(prefix ="prefixName") :-
-	@Validated :- use if we want to perform validations on teh properties based on the violation mentioned on the field.
+	
+3) @ConfigurationProperties :- Used to load all the properties which are logically together into a java bean. Used to store the properties in Map as well as to List 
+
+	@PropertySource("claspath:propertyName.properties") :- Can be used to mention the property file name if we are using other than application.properties
+	@ConfigurationProperties(prefix ="prefixName") :- can be used to mention the prefix value that needs to be considered while loading the properties into a given bean. 
+	@Validated :- use if we want to perform validations on the properties based on the violation mentioned on the field.
+	
 #######################################################################################################################################################################################		
 PROFILES:
 *********
@@ -739,23 +805,42 @@ create properties file like application_profileName.properties
 We can define properties by below ways:
 ---------------------------------------
 1) Using spring.profiles.active= profileName inside the properties file
+	a) Create properties as application_prod.properties
+	b) In application.properties
+	spring.config.import = application_prod.properties , application_uat.properties
+	spring.profiles.active = prod
+	c) In application_prod.properties 
+	spring.config.activate.on-profile = prod
+	
 2) Using the environment variables like below
 	*) export SPRING_PROPFILES_ACTIVE = profileName
-	*) java -jar applicationName.jar
+	*) java -jar application.jar
+	
 3) Using System Property
 	*) java "-Dspring-boot.run.profiles=profileName" -jar applicationName.jar
 	*) mvn spring-boot:run "-Dspring-boot.run.profiles=profileName"
+	
 4) By Programmatically invoking the method setAdditionalProfiles("profileName") inside SpringApplication class
+
 5) Using @ActiveProfiles while doing testing
 	*)@SpringBootTest
 	*)@ActiveProfiles({"profileName"})
 
 Creating Beans based on Active Profile
 --------------------------------------
-@Profile("profileName") on the top of bean class annotated with @Component. (@Profile=!profileName can also be used)
+@Profile("profileName") on the top of bean class annotated with @Component. @Profile=(!profileName) can also be used.
+
+@Component
+@Profile("!profileName")
+public class ExampleAuthenticationProvider implements AuthenticationProvider{
+}
+
 #######################################################################################################################################################################################		
 ACTUATOR:
 *********
+
+Add dependency spring-boot-starter-actuator
+
 management.endpoints.web.base-path=somePath :- Path of the Actuator
 management.endpoints.web.exposure.include=* :- To enable all the actuator in Spring
 
@@ -764,6 +849,7 @@ management.endpoints.web.exposure.include=* :- To enable all the actuator in Spr
 All other paths will support only GET
 
 /info :- We have to create a bean with info what we want for this path
+
 #######################################################################################################################################################################################		
 DEPLOYING INTO AWS:
 *******************

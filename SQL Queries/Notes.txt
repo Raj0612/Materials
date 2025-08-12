@@ -29,14 +29,17 @@ SELECT  Column1, Column2 FROM TableName ORDER BY Column1 ASC;
 
 In ORDER BY, mentioning the name of the column is not necessary, and numbers representing the occurrence of the column in SELECT query can also work. The numbers start from 1, corresponding to the first column in the SELECT query as shown below, which is equivalent to the above query.
 
-SELECT  Column1, Column2, Column3 FROM TableName ORDER BY 1, 3;
 
+*) SELECT  Column1, Column2, Column3 FROM TableName ORDER BY 1, 3;
 
 The LIMIT clause limits the records to a specified value. The LIMIT clause uses two values. One of them is offset, which is optional, and the other is the limit of records. The default value for offset is 0. The following is the syntax of the LIMIT clause:
 
+The LIMIT clause has two numbers: LIMIT offset, count
+
+The first number (1) is the offset. It tells the query to skip the first row of the result set.
+The second number (3) is the count. It tells the query to return 3 row after skipping the offset.
+
 SELECT ColumnName FROM   TableName LIMIT  [offset,] number;
-
-
 
 SELECT StudentName, TheoryMarks FROM StudentGrades ORDER BY TheoryMarks DESC, StudentName ASC;
 The query will sort the result set by TheoryMarks in descending order and then by StudentName in ascending order for rows with the same marks.

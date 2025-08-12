@@ -19,26 +19,93 @@ We can have multiple AuthenticationProvider
 
 Filters in Spring Security:
 ---------------------------
-AuthorizationFilter
-DefaultLoginPageGeneratingFilter :
-AbstractAuthenticationFilter : UsernamePasswordAuthenticatonFilter
+AuthorizationFilter :-
+	To identity whether the user is trying to access a protected resource api or path.
+DefaultLoginPageGeneratingFilter :-
+	If AuthorizationFilter throws AccessDeniedException this filter comes into picture. Its purpose is redirect the user to login page
+AbstractAuthenticationProcessingFilter(Abstract Class) : UsernamePasswordAuthenticatonFilter :-
+	Extracts teh credentials from the request and creates UsernamePasswordAuthenticationToken(extends AbstractAuthenticationToken which implements Authentication) obj, then invokes authenticate method in AuthenticatonManager[ProviderManager which implements AuthenticationManager] which has AuthenticationProvider's.
 BasicAuthenticationFilter :- for httpBasic
-UserNamePasswordAuthenticationFilter :- for formLogin
+UsernamePasswordAuthenticatonFilter :- for formLogin
 
-for formLogin UserNamePasswordAuthenticationFilter will be used 
+for formLogin UsernamePasswordAuthenticatonFilter will be used 
 for http BasicAuthenticationFilter will be used
 
 Spring security doesnt enforce CSRF protection for the reading(GET) operation. But for POST, PUT we have to disable.
 
-***************************************************************************************************************************************************************************************
+UserDetails user to load the user from the strorage systems.
+Authentication user to determine if the authentication is successful or not.
+
+Classes & Interfaces:
+*********************
+
+UserDetailService:
+------------------
+
+UserDetailService(interface) -> UserDetailsManager(interface) -> [ InMemoryUserDetailsManager, JdbcUserDetailsManager, LdapUserDetailsManager ]
+InMemoryUserDetailsManager(UserDetails... users)
+
+UserDetailService(interface):
+	UserDetails loadUserByUserName(String userName) throws UsernameNotFoundException
+	
+UserDetailsManager(interface)
+	void changePassword(String oldPwd, String newPwd);
+	void createUser(UserDetails);
+	void deleteUser(String userName);
+	void updateUser(UserDetails userDetails);
+	boolean userExists(String userName);
+	UserDetails loadUserByUserName(String userName); -- From UserDetailService
+	
+UserDetails(interface) -> User
+
+UserDetails user1 = User.withUsername("user").password("{noop}12345").authorities("read").build();
+
+UserDetails:
+	getAuthorities(): Collection<? extends GrandedAuthority>
+	getPassword(): String
+	getUserName(): String
+	isAccountNonExpired(): boolean
+	isAccountNonLocked() : boolean
+	isCredentialsNonExpired() : boolean
+	isEnabled(): boolean
+	
+JdbcUserDetailsManager extends JdbcDaoImpl implements UserDetailsManager, GroupManager
+JdbcDaoImpl extends JdbcDaoSupport implements UserDetailService, MessageSourseAware
+
+AuthenticationProvider converts UserDetails to Authentication object.
+
+Authentication:
+---------------
+
+Principal(interface) -> Authentication(Interface) -> [ UsernamePasswordAuthenticationToken, AnonymousAuthenticationToken, OidcLogoutAuthenticationToken, OidcBackChannelLogoutAuthentication, TestingAuthenticationToken, RemmeberMeAuthenticationToken , ..... etc ]
+
+Principal(Interface):
+	getName(): String
+	
+Authentication(Interface):
+	getPrincipal() : Object -> UserDetails object as a principal
+	getAuthorities()
+	getCredentials()
+	getDetails() : Object
+	isAuthenticated() : boolean
+	setAuthenticated(boolean isAuthenticated);
+	eraseCredntials() : void
+	
+AuthenticationProvider:
+----------------------
+
+AuthenticationProvider(Interface) - > AbstractUserDetailsAuthenticationProvider(Abstract class) -> [ DaoAuthenticationProvider ]
+
+#######################################################################################################################################################################################
 
 PasswordEncoder:
-----------------
+***************
 {noop}value :- Dont encode password use the plain password.
-PasswordEncoderFactories.createDelegatingPasswordEncoder() :- Contains all teh password encoder supported by Spring Security
+PasswordEncoderFactories.createDelegatingPasswordEncoder() :- Contains all the password encoder supported by Spring Security.
 BCryptPasswordEncoder :- default password encoder. It has 3 versions ($2a, $2b, $2y). Default strength value is 10. Strength value should be between 4 and 31.
 Argon2PasswordEncoder :- It is the advanced one.
-CompromisedPasswordChecker interface (HaveIBeenPwnedRestApiPasswordChecker) - 	From Spring Security 6.3 version
+
+CompromisedPasswordChecker(interface) (HaveIBeenPwnedRestApiPasswordChecker) - 	From Spring Security 6.3 version
 HaveIBeenPwnedRestApiPasswordChecker class - To check the password is compromised. Uses API Url :- https://api.pwnedpasswords.com/range/
 
 Encoding Standard : BASE64, UNICODE, ASCII
@@ -51,9 +118,10 @@ Asymmetric Encryption -- It has 2 keys. One is public key(encrypting) and anothe
 
 SHA256 is an algorithm used for hashing.
 
-***************************************************************************************************************************************************************************************
+#######################################################################################################################################################################################
+
 Annotations:
-------------
+************
 @ComponentScan("packageName")  --  To scan the components in the package. If the component is in the same root package no need to define else have to give.
 @EnableJpaRepositories("pacageName") -- To scan the @Repository annotated class. If those are present in the same root package no need to define else have to give.
 @EntityScan("pacageName") -- To scan the @Entity annotated class. If those are present in the same root package no need to define else have to give.
@@ -63,18 +131,22 @@ Annotations:
 
 @Async - It should be annotated on top of a method which indicates that the logic in the method have to execute in a separate asynchoronous thread.
 
-***************************************************************************************************************************************************************************************
+#######################################################################################################################################################################################
 
-SecurityConfig
+SecurityConfig:
+***************
 http.formLogin(withDefaults()) -- To enable form based login
 http.httpBasic(withDefaults()) -- To validate the credentials in the Http Headers by Base64 encoding. To validate by calling API
 http.authorizeHttpRequests((request) -> request.requestMatchers("/path", "/path1").authenticated()
 											   . requestMatchers("/path").permitAll());
 http.formLogin(httpSecurityFormLoginConfigurer -> httpSecurityFormLoginConfigurer.disable()) -- To disable form based login
 
-***************************************************************************************************************************************************************************************
+#######################################################################################################################################################################################
 
-UsernamePasswordAuthenticationToken implements Authentication.
+AuthenticationProvider:
+***********************
+
+[ UsernamePasswordAuthenticationToken , RemmeberMeAuthenticationToken, JaasAuthenticationToken, OidcLogoutAuthenticationToken, OidcBackChannelLogoutAuthentication , AnonymousAuthenticationToken, TestingAuthenticationToken ,... etc] implements Authentication.
 ProviderManager implements AuthenticationManager
 DaoAuthenticationProvider is the default Authentication provider which extends AbstractUserDetailsAuthenticationProvider which implements AuthenticationProvider. If no custom AuthenticationProvider is there then DaoAuthenticationProvider is used
 
@@ -89,37 +161,52 @@ UserDetails(interface) - getAuthorities(), getPassword(), getUserName(), isAccou
 
 UserDetailsManager extends UserDetailService
 InMemoryUserDetailsManager, JdbcUserDetailsManager, LdapUserDetailsManager implements UserDetailsManager
-User implements UserDeatails, CredentialsCounter
+User implements UserDetails, CredentialsCounter
 
-Authentication inerface extends Principal interface
+Authentication interface extends Principal interface
 UsernamePasswordAuthenticationToken implements Authentication
 Principal :- getName()
 Authentication :- getPrincipal(), getCredentials(), getAuthorities(), getDetails(), isAuthenticated(), setAuthenticated(), eraseCredntials()
 
-***************************************************************************************************************************************************************************************
+#######################################################################################################################################################################################
 
-Authentication Provder:
------------------------
+Authentication Provider:
+************************
+
+The default authentication provider will authenticate by loading the user name and compare the password. 
+
+By having custom AuthenticateProvider we can authenticate user if we need to authenticate not by passwprd but by other scenarios like authenticate by country details, age details like so.
+
 It has 2 methods authenticate, supports.
 DaoAuthenticationProvider is the default Authentication provider which extends AbstractUserDetailsAuthenticationProvider which implements AuthenticationProvider. If no custom AuthenticationProvider is there then DaoAuthenticationProvider is used.
+
+The authenticate method in AuthenticateProvider is called by AuthenticationManager.
+
+We can also override AuthenticationManager by creating a bean in securityConfig class.
 
 If Authenticate object is of type UsernamePasswordAuthenticationToken then provider manager will use DaoAuthenticationProvider.
 
 authenticate(Authentication authentication) method in ProviderManager decides which Authenticate Provider to use.
 
-***************************************************************************************************************************************************************************************
+#######################################################################################################################################################################################
 
 To Load Profiles:
------------------
-We can create the environmental variables as SPRING_PROFILES_ACTIVE=prod which is the first priority
+*****************
+We can create the environmental variables as SPRING_PROFILES_ACTIVE=prod which is the first priority. If its not there it will look into the application.properties
+
+Step 1: In application.properties
 spring.config.import = application_prod.properties, application_uat.properties :- To define which profiles have to use
 spring.profiles.active = uat
 
-@Profile("profileName") or @Profile("!profileName") -- To use the component depends on the profileName which is active. Define in the top of the java class.
+Step 2: In application_uat.properties
+spring.config.activate-on.profile = uat
 
-***************************************************************************************************************************************************************************************
+@Profile("profileName") or @Profile("!profileName") -- To use the component depends on the profileName which is active. Define in the top of the java class annotated with @Component.
+
+#######################################################################################################################################################################################
+
 CORS:
-----
+*****
 @CrossOrign annotated on top of the class or method like below
 @CrossOrign(origins= "websiteName")
 @CrossOrign(origins= "*")
@@ -127,57 +214,114 @@ CORS:
 We have to use CorsConfigurationSource interface in our SecurityConfig class. This is the recommended one.
 Using CorsConfigurationSource we can set AllowedOrigins, AllowedMethods, AllowCredentials, AllowedHeaders, MaxAge, ExposedHeaders
 
+https.cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource(){
+	@Override
+	public CorsConfiguration getCOrsConfiguartion(HttpServletRequest request){
+		CorsConfiguration config = new CorsConfiguration();
+		config.setAllowedOrigins(Collections.singletonList("url"));
+		config.setAllowedMethods(Collections.singletonList("*"));
+		config.setAllowedHeaders(Collections.singletonList("*"));
+		config.setExposedHeaders(Arrays.asList("Authorization")); // To expose heared from backend to UI
+		config.setMaxAge(3600L);
+		return config;
+	}
+}));
+
 Browser will send a preflight request to the backend to know the CORS configuartion.  Backend should send Access-Control-Allow-Origin header which has the allowed orign configured in Spring as value.  Then only the actual API will be called.
 
 CSRF:
------
+*****
 By default CSRF will be applied to POST, DELETE, PUT which are used to alter the data.
 
 CSRF Token : Used to prevent CSRF attack. It will be unique per user session. It is also called as XSRF token. CSRF Token should be sent by the UI to the backend in each request  either in header or payload along with CSRF cookie by the browser.
 
 CsrfToken interface is used to create the CSRF Token by Spring. Use CookieCsrfTokenReposity class as storing CSRF Token in cookie is better than stoting is session.
-http.csrf(csrfConfig -> csrfConfig.csrfTokenRepository(CookieCsrfTokenReposity.withHttpOnlyFalse())) add this is SecurityConfig class. withHttpOnlyFalse :- js code also will read the cookie
+
+To create custom CSRFCookieFilter:
+---------------------------------- 
+Create a class CSRFCookieFilter by extending OncePerRequestFilter and override doFilterInternal method.
+
+Add this is SecurityConfig class
+	http.csrf(csrfConfig -> csrfConfig.csrfTokenRepository(CookieCsrfTokenReposity.withHttpOnlyFalse()))
+		.addFilterAfter(new CSRFCookieFilter(), BasicAuthenticationFilter.class)
+
+Note:
+-----
+withHttpOnlyFalse :- js code also will read the cookie.
+
+To read CSRF token on each Request:
+------------------------------------
+1) Create object of CsrfTokenRequestAttributeHandler in SecurityConfig class.
+2) Add  .csrf(csrfConfig -> csrfConfig.csrfTokenRequestHandler(CsrfTokenRequestAttributeHandlerObj)) in SecurityFilterChain.
 
 CsrfFilter is responsible for validating the CsrfToken
 
 If csrf is not disabled we will get 403(Formidden) status code error.
 
-***************************************************************************************************************************************************************************************
+#######################################################################################################################################################################################
+
+Security Customizations:
+========================
 
 HTTPS:
------
+******
 requiresChannel method will be used to secure with HTTPs protocol.
 	 http.requiresChannel(rcc -> rcc.anyRequest().requiresSecure()). Define in the SecurityConfig class 
 	 http.requiresChannel(rcc -> rcc.anyRequest().requiresInSecure()). For using only http
 	 
 Exception Handling:
--------------------
+*******************
 401 Code : Authentication Failure
+402 code : Payment Required
 403 Code : Forbidden or Authorization Failure
+404 code : Not Found
 
-ExceptionTranslationFilter handles exception related to authentication and authorization within the filter chain.
+ExceptionTranslationFilter handles exception related to authentication(AuthenticationException) and authorization(AccessDeniedException) thrown within the filter chain.
 
-AuthenticationEntryPoint interface -- to handle custom authentication exception
-	http.httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomExceptionClass()))
-AccessDeniedHandler interface - To handle custom authorization exception
-	http.exceptionHandling(ehc -> ehc.accessDeniedHandler(new CustomAccessDeniedHandlerClass()))
+Implement below interfaces for custom exception for authentication & authorization
+
+Step 1:
+	Create a CustomAuthenticationEntryPointClass which implements  AuthenticationEntryPoint and override the commence method.
+Step 2: 
+	Define in SecurityConfig class under the SecurityFilterChain
+	http.httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomAuthenticationEntryPointClass())) : For only http bacic flow
+	http.exceptionHandling(ehc -> ehc.authenticationEntryPoint(new CustomAuthenticationEntryPointClass())) :	For Global Config
+	For http.formLogin we cannot 
+	
+Step 1: 
+	Create a CustomAccessDeniedHandlerClass which implements AccessDeniedHandler and override the handle method.
+Step 2:
+	Define in SecurityConfig class under the SecurityFilterChain. It should be done at globally
+	http.exceptionHandling(ehc -> ehc.accessDeniedHandler(new CustomAccessDeniedHandlerClass()).accesDeniedPage("/denied")) : accesDeniedPage is optional. Use accesDeniedPage if we are exposing the api to other application.
 
 Session:
---------
+********
 Default time for a session is 30 minutes. JsessionID will be for 30 minutes by default
 http.sessionManagement method will be used for session handling in SecurityConfig class
+http.sessionManagement(smc -> smc.invalidSessionUrl("/path") )
 
 server.servlet.session.timeout = 20m :- property can use used for setting session timout in application properties file
-maximumsessions(1) & .maxSessionsPreventsLogin(true) - to restrict conncurrent session to specified number
+maximumsessions(1) & maxSessionsPreventsLogin(true) - to restrict conncurrent session to specified number
+http.sessionManagement(smc -> smc.invalidSessionUrl("/path").maximumsessions(1).maxSessionsPreventsLogin(true).expiredUrl("/path"))
 
 If we use HTTPS protocol, hackers cant steal the session ID. Https prevents Session Hijacking.
 Session Hijacking can be prevented by having sesson timeout for less time.
 
 Session Fixation can be avoided by creating a new session or chaning the session ID when the user logs in.
 
-Authentication Events:
-----------------------
+http.sessionManagement((session) -> session 
+		.sessionFixation(sesionFixation -> sessionFixation
+		.newSession())
+		);
+By default spring will use changeSessionId strategy.
 
+Preventions of Sesson Hijacking:
+--------------------------------
+1. If Https protocol is used hacker cannot steal the sessionID.
+2. Limit sesson time out
+
+Authentication Events:
+**********************
 To handle events after success or failure of authentication. We have to create a bean with annotation @Component and use AuthenticationSuccessEvent (onSuccess(AuthenticationSuccessEvent event)) and AbstractAuthenticationFailureEvent (onFailure AbstractAuthenticationFailureEvent event )by annotating @EventListener in the respective methods.
 
 GrandedAuthority Interface 
@@ -186,13 +330,71 @@ We can use the Bean GrantedAuthorityDefaults by having our own prefix for a role
 logging.level.org.springframework.security ---  to show all the filters
 We can implement Filter or GenericFilterBean(capable or reading environment variables) or OncePerRequestFilter interface for customized filter.
 
-***************************************************************************************************************************************************************************************
+Form Login:
+***********
+
+http.formLogin(flc -> flc.loginPage("/login").userNameParameter("userId").passwordParmeter("pwd").defaultSuccessUrl("/path").failureUrl("/login?error=true")).
+
+To Handle custom handler after successful authentication:
+---------------------------------------------------------
+Step 1: 
+	Create a CustomAuthenticationSuccessHandler class by implementing AuthenticationSuccessHandler(Abstract) with annotation @Component and implement the onAuthenticationSuccess method.
+	
+Step 2:
+	Autowire the CustomAuthenticationSuccessHandler in the SecurityConfig class.
+	
+To Handle custom handler after failure authentication:
+------------------------------------------------------
+Step 1: 
+	Create a CustomAuthenticationFailureHandler class by implementing AuthenticationFailureHandler(Abstract) with annotation @Component and implement the onAuthenticationFailure method.
+
+Step 2:
+	Autowire the CustomAuthenticationFailureHandler in the SecurityConfig class.
+
+http.formLogin(flc -> flc.loginPage("/login").userNameParameter("userId").passwordParmeter("pwd")
+	.defaultSuccessUrl("/path").failureUrl("/login?error=true")
+	.successHandler(customSuccessObj).failureHandler(customFailureObj));
+	
+Logout:
+*******
+	http.formLogin(flc -> flc.loginPage("/login").userNameParameter("userId").passwordParmeter("pwd")
+	.defaultSuccessUrl("/path").failureUrl("/login?error=true")
+	.successHandler(customSuccessObj).failureHandler(customFailureObj)
+	.logout(loc -> loc.logoutSuccessUrl("/login?logout=true")));
+
+
+Thread Strategy:
+****************
+@Bean
+public IntializingBean initializingBean(){
+	return () -> SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_GLOBAL);
+}
+
+Modes are below:
+	MODE_THREADLOCAL(default)
+	MODE_INHERITABLETHREADLOCAL :- use this in the case of an asynchronous method.
+	MODE_GLOBAL :- Makes all the thread of an application see the same security context instance.
+	
+Load User:
+**********
+Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+String name = authentication.getName();
+
+#######################################################################################################################################################################################
 
 AUTHORIZATION:
-##############
+*************
 
 GrantedAuthority interface is used by SimpleGrantedAuthority class.
-Authority is like a individual privillage or action. Role is a group of previleges/actions
+Authority is like a individual privillage or action. Role is a group of previleges/actions.
+
+To create custom prefix for role instead of prefix ROLE_:
+---------------------------------------------------------
+@Bean
+static GrantedAuthorityDefaults grantedAuthorityDefaults(){
+	return new GrantedAuthorityDefaults("MYPREFIX_");
+}
+
 
 Methods for Authority:
 ----------------------
@@ -206,15 +408,18 @@ hasRole() :- Accepts single role
 hasAnyRole() :- Accepts multiple roles
 access()
 
-We can have our own prefix for role instead of ROLE_
-@Bean 
-static GrantedAuthorityDefaults grantedAuthorityDefaults(){
-	return new GrantedAuthorityDefaults("MYPREFIX_");
-}
+hasRole(), hasAnyRole() :- will append the ROLE_ on the role we are giving.
+
+Authorization Event:
+-------------------
+Step 1: Create a class AuthorizationEvents annotated with @Component
+Step 2: Override onFailure(AuthorizationDeniedEvent ade) and annotate with @EventListener
+
+#######################################################################################################################################################################################
 
 Method Level Security:
+======================
 
----------------------
 It has 2 usages
 1) Invocation Authorization - Validates whether someone can invoke a method based on roles/authorities. @PreAuthorize("hasRole('Admin')")
 2) Filtering authorization  - Validates what a method can receive through its parameters and what the invoker can receive back from the method post business logic execution. @PreAuthorize("#username == authentication.principal.username")
@@ -238,6 +443,7 @@ jsr250Enabled  :-  @RoleAllowed
 
 @PreAuthorize("hasAuthority('ViewLoans')")
 @PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("#userName == authentication.principal.username")
 
 @PostAuthorize("returnObject.userName == authentication.principal.username")
 
@@ -246,18 +452,21 @@ We can apply Method Security in methods in any layer for extra security
 Filtering authorization:
 ------------------------
 @PreFilter - used to filter the objects. Its parameter should be collection of objects.
-@PostFilter - used to filter the data before sending response
+@PostFilter - used to filter the data before sending response. It will be applied to the return type of the method which should be a collection.
 
 @PreFilter("filterObject.contactName != 'Test'") :- Here filterObject should be of type Collection
 public List<Contact> saveContact(@RequestBody List<Contact> contacts){
 
 }
+
 We can club @Prefilter and @PostFilter
 
-***************************************************************************************************************************************************************************************
+#######################################################################################################################################################################################
 
 FILTERS:
-########
+========
+
+@EnableWebSecurity(debug=true) : Will give all the filters executed in logs . Annotate on top of the application.
 
 After filters are executed the request will be forwared to Dispatcher Servlet.
 
@@ -268,20 +477,29 @@ UserNamePasswordAuthenticationFilter
 BasicAuthenticationFilter
 DefaultLoginPageGeneratingFilter
 
-We can create custom filters by implementing Filter Interface and by extending abstract classes GenericFilterBean or OncePerRequestFilter which already extends GenericFilterBean.
+We can create custom filters by implementing Filter Interface or by extending abstract classes GenericFilterBean or OncePerRequestFilter which already extends GenericFilterBean.
 OncePerRequestFilter  :- Filter will execute only once for each request.
+By using GenericFilterBean we can read the Servlet details defined in web.xml.
 
 We can specify when our filter to execute in the SecurityFilterChain defined in @Configuration class as below:
 
 addFilterBefore(customFilterClassObject, InbuildFilter.class)
 addFilterAfter(customFilterClassObject, InbuildFilter.class)
 addFilterAt(customFilterClassObject, InbuildFilter.class)
-addFilter(customFilterClassObject) :- For this we have mention @Order(3) on top of the CustomFilter Class
+addFilter(customFilterClassObject) :- For this we have mention @Order(3) on top of the CustomFilter Class.
 
-***************************************************************************************************************************************************************************************
+If our custom filer should not execute, We should override shouldNotFilter method in OncePerRequestFilter and return true there.
+
+private boolean shouldNotFilter(HttpServletRequest req) throws ServletException{
+	return true;
+}
+
+#######################################################################################################################################################################################
+
+A dedicated Auth server is needed to validate this token, but JWT same server can validate also it can contain user information.
 
 JWT TOKEN:
-##########
+*********
 
 JWT Token has 3 parts : header, payload and signature
 header has information like what algorithm used and like that
@@ -290,14 +508,19 @@ signature is crerated by using formula HMACSHA256(baseUrlEncode(header) + "." + 
 
 Steps to create JWT TOken:
 --------------------------
-1) Create Filters for generating JWTToken and validating JWT Token by extending OncePerRequestFilter.
-2) Add addFilterAfter(JWTCreateFilterObj, BasicAuthenticationFilter.class) : For creating JWT token after login success
-3) Add addFilterBefore(JWTValidateFilterObj, BasicAuthenticationFilter.class) : For validating JWT token after login success
+1) Create Filter for generating JWTToken by extending OncePerRequestFilter.
+2) Override doFilterInternal and implement logic for creating JWT Token.
+3) Override shouldNotFilter method with code (return !request.getServletPath().equals("/user");)
+4) Create Filter for validating JWT Token by extending OncePerRequestFilter.
+5) Override doFilterInternal and implement logic for validating JWT Token.
+6) Override shouldNotFilter method with code (return request.getServletPath().equals("/user");)
+2) Add addFilterAfter(JWTCreateFilterObj, BasicAuthenticationFilter.class) :- For creating JWT token after login success
+3) Add addFilterBefore(JWTValidateFilterObj, BasicAuthenticationFilter.class) :- For validating JWT token after login success
 
-***************************************************************************************************************************************************************************************
+#######################################################################################################################################################################################
 
 OAUTH2: Open Authorization
-######
+===========================
 
 OAuth2 has grant types as below
 *) Authorization Code
@@ -309,16 +532,21 @@ OAuth2 has grant types as below
 *) Password Grand(Legacy) 
 
 1)AuthorizationCode - Flow will be by 2 types 
-	1) To get the authorizaton code(clientId, response_type="code", scope(READ, WRITE etc),state(CSRF token to protect from CSRF attacks), redirect_uri)  
-	2) Then to get access token(clientId , clientSecret , authcode, grant_type="authorization_code", redirect_uri). In both redirect_uri needs to be send
-2)Implict Grand Flow - (client_id,redirect_uri,scope,state, reponse_type="token"). ClientSecret is not involved since it is a get request. Here only one request to auth server to get the token. Its not secure as the token value will be redirected in the url.
-3)Proof Key For Code Exchange(PKCE) -- Used for public clients(navtive and SPA) as public clients cannot securely store a Clinet Secret. Using code_verifier only we code_challenge is created by using the code_challenge_method.
-	1) To get Authorization code (clientId, redirect_uri, scope, state, reponse_type="code", code_challenge, code_challenge_method=SH256). Authorization Server stores the code_challenge and sends the authorization code.
-	2) To get access token(clientId , clientSecret , code, grant_type="authorization_code", code_verifier)code_challenge is the has representation of code_verifier. Auth Server verifies the code_challenge by the code_verifier which is send now and if valid will send the access token. clientId & clientSecret are optional.
-4)Password Grant Type -- Here user credentials  is shared. Used if Auth Server, Resource server and client belongs to same origanization as user credentials are shared.
-	1) To get access toaken (client_id, client_secret, scope, grant_type="password" username & password)
-5) Client Credentials Grant Type :- Used when no end user involved
-	1) (client_id, client_secret, scope, grant_type="client_credentials"). We can use this flow if there are no user and ui involved.
+	*) To get the authorizaton code(clientId, response_type="code", scope(READ, WRITE etc), state(CSRF token to protect from CSRF attacks), redirect_uri) . Authe server will send code and the state with value which we send earlier
+	*) Then to get access token(clientId , clientSecret , authcode, grant_type="authorization_code", redirect_uri). In both redirect_uri needs to be send.
+	
+2)Implict Grand Flow - (client_id,redirect_uri,scope,state, reponse_type="token"). ClientSecret is not involved since it is a get request. Here only one request to auth server to get the access token. It's not secure as the token value will be redirected in the url. In response we will get the access_token along with the state with value which we send earlier
+
+3)Proof Key For Code Exchange(PKCE) -- Used for public clients(native and SPA) as public clients cannot securely store a Client Secret. Using code_verifier only the code_challenge(has value of code_verifier) is created by using the code_challenge_method.
+	*) To get Authorization code (clientId, redirect_uri, scope, state, reponse_type="code", code_challenge, code_challenge_method=SH256). Authorization Server stores the code_challenge and sends the authorization code.
+	*) To get access token(clientId , clientSecret , code, grant_type="authorization_code", code_verifier)code_challenge is the has representation of code_verifier. Auth Server verifies the code_challenge by the code_verifier which is send now and if valid it will send the access token. clientId & clientSecret are optional.
+	
+4)Password Grant Type -- Here user credentials(username & password) is shared. Used if Auth Server, Resource server and client belongs to same origanization as user credentials are shared. This grant type is deprecated.
+	*) To get access token (client_id, client_secret, scope, grant_type="password" username="" , password="")
+	
+5) Client Credentials Grant Type :- Used when no end user involved, means when 2 backend application tries to communicate.
+	*)  To get access toke (client_id, client_secret, scope, grant_type="client_credentials"). We can use this flow if there are no user and ui involved.
+	
 6) Refreh Token Grant Flow: 
 	*) When using AuthorizationCode & PKCE grant flow we will get access token and refresh token.
 	*) When accessToken is expired refresh Token grant flow will be initiated using refresh token.
