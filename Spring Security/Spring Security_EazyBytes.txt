@@ -1,6 +1,6 @@
 
 SecurityProperties.java :- Responsible for generating default password(UUID.randomUUID().toString();) when spring security dependency jar is added
-spring.security.user.name=$(SPRING_USERNAME:raj) :- SPRING_USERNAME is defined in environment variables and raj is the default if SPRING_USERNAME is not present in environment variables
+spring.security.user.name=$(SPRING_USERNAME:raj) :- SPRING_USERNAME is defined in the environment variables and raj is the default if SPRING_USERNAME is not present in the environment variables
 spring.security.user.password = ""
 spring.security.user.roles = ""
 mention those in application.properties file
@@ -11,7 +11,7 @@ Servlet Container:
 Servlet Container(Web Server) takes care of translating HTTP messages for java code to understand. Servlet Container converts the HTTP messages to ServletRequest and hand over to servlet method as a parameter. Similarly ServletResponse returns as an output to Servlet Container from Servlet.
 
 Application.properties
-server.port=${SPRING_PORT:9090}   --- If an environment variable with name SPRING_PORT is present it will take that value else default value is set as 9090
+server.port=${SPRING_PORT:9090}   --- If an environment variable with name SPRING_PORT is present it will take that value else default value is set as 8080
 logging.level.org.springframework.security =
 
 
@@ -24,7 +24,7 @@ AuthorizationFilter :-
 DefaultLoginPageGeneratingFilter :-
 	If AuthorizationFilter throws AccessDeniedException this filter comes into picture. Its purpose is redirect the user to login page
 AbstractAuthenticationProcessingFilter(Abstract Class) : UsernamePasswordAuthenticatonFilter :-
-	Extracts teh credentials from the request and creates UsernamePasswordAuthenticationToken(extends AbstractAuthenticationToken which implements Authentication) obj, then invokes authenticate method in AuthenticatonManager[ProviderManager which implements AuthenticationManager] which has AuthenticationProvider's.
+	Extracts the credentials from the request and creates UsernamePasswordAuthenticationToken(extends AbstractAuthenticationToken which implements Authentication) obj, then invokes the authenticate method in AuthenticatonManager[ProviderManager which implements AuthenticationManager] which has AuthenticationProvider's.
 BasicAuthenticationFilter :- for httpBasic
 UsernamePasswordAuthenticatonFilter :- for formLogin
 
@@ -33,8 +33,8 @@ for http BasicAuthenticationFilter will be used
 
 Spring security doesnt enforce CSRF protection for the reading(GET) operation. But for POST, PUT we have to disable.
 
-UserDetails user to load the user from the strorage systems.
-Authentication user to determine if the authentication is successful or not.
+UserDetailsService used to load the user from the storage systems.
+Authentication object to determine if the authentication is successful or not.
 
 Classes & Interfaces:
 *********************
@@ -61,7 +61,7 @@ UserDetails(interface) -> User
 UserDetails user1 = User.withUsername("user").password("{noop}12345").authorities("read").build();
 
 UserDetails:
-	getAuthorities(): Collection<? extends GrandedAuthority>
+	getAuthorities(): Collection<? extends GrantedAuthority>
 	getPassword(): String
 	getUserName(): String
 	isAccountNonExpired(): boolean
@@ -96,24 +96,34 @@ AuthenticationProvider:
 
 AuthenticationProvider(Interface) - > AbstractUserDetailsAuthenticationProvider(Abstract class) -> [ DaoAuthenticationProvider ]
 
+DaoAuthenticationProvider :-  Is used to authenticate users against a database or other persistent storage. It's commonly used in applications where user credentials are stored in a database. 
+
 #######################################################################################################################################################################################
 
 PasswordEncoder:
 ***************
 {noop}value :- Dont encode password use the plain password.
-PasswordEncoderFactories.createDelegatingPasswordEncoder() :- Contains all the password encoder supported by Spring Security.
+PasswordEncoderFactories.createDelegatingPasswordEncoder() :- Contains all the password encoder supported by Spring Security. 
+	 @Bean
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
 BCryptPasswordEncoder :- default password encoder. It has 3 versions ($2a, $2b, $2y). Default strength value is 10. Strength value should be between 4 and 31.
 Argon2PasswordEncoder :- It is the advanced one.
 
 CompromisedPasswordChecker(interface) (HaveIBeenPwnedRestApiPasswordChecker) - 	From Spring Security 6.3 version
 HaveIBeenPwnedRestApiPasswordChecker class - To check the password is compromised. Uses API Url :- https://api.pwnedpasswords.com/range/
+	@Bean
+    public CompromisedPasswordChecker compromisedPasswordChecker() {
+        return new HaveIBeenPwnedRestApiPasswordChecker();
+    }
 
 Encoding Standard : BASE64, UNICODE, ASCII
 Openssl - a tool used to encode and decode values. It is also used for encryption and decryption. It also used for hashing
 for encode -- openssl base64 -in 'textfile' -out 'textfile1'
 for decode -- openssl base64 -d -in 'textfile1' -out 'textfile'
 
-Symmetric encryption -  same key will be used for encryption and decryption. Famous algorithm is AES, Triple DES, Blowfish.
+Symmetric encryption -  Same key will be used for encryption and decryption. Famous algorithm is AES, Triple DES, Blowfish.
 Asymmetric Encryption -- It has 2 keys. One is public key(encrypting) and another is private key(decrypting). Owner will generate the 2 types of keys and will keep the private key and distribute the public key to any number of third party.  Most commonly used algorithms are RSA, ECC, PGP and Diffie-Hellman.
 
 SHA256 is an algorithm used for hashing.
@@ -123,13 +133,34 @@ SHA256 is an algorithm used for hashing.
 Annotations:
 ************
 @ComponentScan("packageName")  --  To scan the components in the package. If the component is in the same root package no need to define else have to give.
-@EnableJpaRepositories("pacageName") -- To scan the @Repository annotated class. If those are present in the same root package no need to define else have to give.
-@EntityScan("pacageName") -- To scan the @Entity annotated class. If those are present in the same root package no need to define else have to give.
+@EnableJpaRepositories("packageName") -- To scan the @Repository annotated class. If those are present in the same root package no need to define else have to give.
+@EntityScan("packageName") -- To scan the @Entity annotated class. If those are present in the same root package no need to define else have to give.
 @EnableWebSecurity -- If only spring security is used and no other Spring Boot feature we have to mention else optional.
+	
+	
+Ponints: 
+
+	*) @EnableWebSecurity  is a Spring Security annotation used to enable web security in a Spring application. It signals to Spring that this is a configuration class that will define security settings for web-based security, such as authentication and authorization rules.
+	
+	*) Use @EnableWebSecurity on a @Configuration class when you want to configure security for your web application.
+	
+	*) We can use Spring Security without explicitly annotating a configuration class with @EnableWebSecurity, especially if you are using Spring Boot.
+	
+	*) Spring Boot’s auto-configuration automatically enables web security with sensible defaults, so in many cases, you don’t need to add @EnableWebSecurity yourself. However, if you want to customize the security configuration (like defining custom authentication, authorization rules, or security filters), you typically create a configuration class annotated with @EnableWebSecurity to take control of the security setup.
+	
+	*) For basic, default security setup in Spring Boot, no need to use @EnableWebSecurity explicitly. For custom security configurations, use @EnableWebSecurity on your configuration class.
 
 @JsonProperty(acess=JsonProperty.Access.WRITE_ONLY) :- annotate on top of the entity class field
 
+Points:
+	*) To indicate that a property should only be used for deserialization (writing into the object) but not for serialization (reading out to JSON).
+	
+	*) To prevent sensitive data (like passwords) from being exposed in JSON responses sent to clients.
+	
+	*) The field can be set when receiving JSON input (e.g., during a POST or PUT request) but will be omitted when the object is converted back to JSON for output.
+
 @Async - It should be annotated on top of a method which indicates that the logic in the method have to execute in a separate asynchoronous thread.
+	*) To enable @Async support, add @EnableAsync to a configuration class:
 
 #######################################################################################################################################################################################
 
@@ -139,7 +170,7 @@ http.formLogin(withDefaults()) -- To enable form based login
 http.httpBasic(withDefaults()) -- To validate the credentials in the Http Headers by Base64 encoding. To validate by calling API
 http.authorizeHttpRequests((request) -> request.requestMatchers("/path", "/path1").authenticated()
 											   . requestMatchers("/path").permitAll());
-http.formLogin(httpSecurityFormLoginConfigurer -> httpSecurityFormLoginConfigurer.disable()) -- To disable form based login
+http.formLogin(hlc -> hlc.disable()) -- To disable form based login
 
 #######################################################################################################################################################################################
 
@@ -148,7 +179,11 @@ AuthenticationProvider:
 
 [ UsernamePasswordAuthenticationToken , RemmeberMeAuthenticationToken, JaasAuthenticationToken, OidcLogoutAuthenticationToken, OidcBackChannelLogoutAuthentication , AnonymousAuthenticationToken, TestingAuthenticationToken ,... etc] implements Authentication.
 ProviderManager implements AuthenticationManager
-DaoAuthenticationProvider is the default Authentication provider which extends AbstractUserDetailsAuthenticationProvider which implements AuthenticationProvider. If no custom AuthenticationProvider is there then DaoAuthenticationProvider is used
+
+It has 2 methods authenticate, supports.
+DaoAuthenticationProvider is the default Authentication provider which extends AbstractUserDetailsAuthenticationProvider which implements AuthenticationProvider. If no custom AuthenticationProvider is there then DaoAuthenticationProvider is used.
+
+The authenticate method in AuthenticateProvider is called by AuthenticationManager.
 
 InMemoryUserDetailsManager implements UserDetailsManager which extends UserDetailsService
 User implements UserDetails
@@ -168,21 +203,12 @@ UsernamePasswordAuthenticationToken implements Authentication
 Principal :- getName()
 Authentication :- getPrincipal(), getCredentials(), getAuthorities(), getDetails(), isAuthenticated(), setAuthenticated(), eraseCredntials()
 
-#######################################################################################################################################################################################
-
-Authentication Provider:
-************************
-
 The default authentication provider will authenticate by loading the user name and compare the password. 
 
-By having custom AuthenticateProvider we can authenticate user if we need to authenticate not by passwprd but by other scenarios like authenticate by country details, age details like so.
+By having custom AuthenticationProvider we can authenticate user if we need to authenticate not by passwprd but by other scenarios like authenticate by country details, age details like so.
 
-It has 2 methods authenticate, supports.
-DaoAuthenticationProvider is the default Authentication provider which extends AbstractUserDetailsAuthenticationProvider which implements AuthenticationProvider. If no custom AuthenticationProvider is there then DaoAuthenticationProvider is used.
 
-The authenticate method in AuthenticateProvider is called by AuthenticationManager.
-
-We can also override AuthenticationManager by creating a bean in securityConfig class.
+We can also override AuthenticationManager by creating a bean in securityConfig class.(Section 11)
 
 If Authenticate object is of type UsernamePasswordAuthenticationToken then provider manager will use DaoAuthenticationProvider.
 
@@ -221,7 +247,7 @@ https.cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigur
 		config.setAllowedOrigins(Collections.singletonList("url"));
 		config.setAllowedMethods(Collections.singletonList("*"));
 		config.setAllowedHeaders(Collections.singletonList("*"));
-		config.setExposedHeaders(Arrays.asList("Authorization")); // To expose heared from backend to UI
+		config.setExposedHeaders(Arrays.asList("Authorization")); // To expose header from backend to UI
 		config.setMaxAge(3600L);
 		return config;
 	}
@@ -235,7 +261,7 @@ By default CSRF will be applied to POST, DELETE, PUT which are used to alter the
 
 CSRF Token : Used to prevent CSRF attack. It will be unique per user session. It is also called as XSRF token. CSRF Token should be sent by the UI to the backend in each request  either in header or payload along with CSRF cookie by the browser.
 
-CsrfToken interface is used to create the CSRF Token by Spring. Use CookieCsrfTokenReposity class as storing CSRF Token in cookie is better than stoting is session.
+CsrfToken interface is used to create the CSRF Token by Spring. Use CookieCsrfTokenReposity class for storing CSRF Token in cookie is better than storing in session.
 
 To create custom CSRFCookieFilter:
 ---------------------------------- 
@@ -247,7 +273,18 @@ Add this is SecurityConfig class
 
 Note:
 -----
-withHttpOnlyFalse :- js code also will read the cookie.
+withHttpOnlyFalse :- js code also will be able read the cookie.  withHttpOnlyFalse refers to configuring a cookie with the HttpOnly attribute set to false.
+
+Points:
+@@@@@@@
+
+*) HttpOnly is a flag you can set on cookies to tell browsers that the cookie should not be accessible via client-side scripts (like JavaScript). This is a security feature to help prevent cross-site scripting (XSS) attacks from stealing cookies.
+
+*) If HttpOnly is true (the default and recommended for session cookies), the cookie cannot be accessed by JavaScript.
+
+*) If withHttpOnlyFalse means setting HttpOnly to false, it allows client-side scripts to access the cookie.
+
+*) Generally, avoid setting HttpOnly to false for sensitive cookies like session IDs or authentication tokens.
 
 To read CSRF token on each Request:
 ------------------------------------
@@ -256,7 +293,7 @@ To read CSRF token on each Request:
 
 CsrfFilter is responsible for validating the CsrfToken
 
-If csrf is not disabled we will get 403(Formidden) status code error.
+If csrf is not disabled we will get 403(Forbidden) status code error .
 
 #######################################################################################################################################################################################
 
@@ -281,11 +318,11 @@ ExceptionTranslationFilter handles exception related to authentication(Authentic
 Implement below interfaces for custom exception for authentication & authorization
 
 Step 1:
-	Create a CustomAuthenticationEntryPointClass which implements  AuthenticationEntryPoint and override the commence method.
+	Create a CustomAuthenticationEntryPointClass which implements AuthenticationEntryPoint and override the commence method.
 Step 2: 
 	Define in SecurityConfig class under the SecurityFilterChain
 	http.httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomAuthenticationEntryPointClass())) : For only http bacic flow
-	http.exceptionHandling(ehc -> ehc.authenticationEntryPoint(new CustomAuthenticationEntryPointClass())) :	For Global Config
+	http.exceptionHandling(ehc -> ehc.authenticationEntryPoint(new CustomAuthenticationEntryPointClass())) :	Globally for all authentication failures  e.g., form login, HTTP Basic, OAuth, etc.)
 	For http.formLogin we cannot 
 	
 Step 1: 
@@ -307,7 +344,7 @@ http.sessionManagement(smc -> smc.invalidSessionUrl("/path").maximumsessions(1).
 If we use HTTPS protocol, hackers cant steal the session ID. Https prevents Session Hijacking.
 Session Hijacking can be prevented by having sesson timeout for less time.
 
-Session Fixation can be avoided by creating a new session or chaning the session ID when the user logs in.
+Session Fixation can be avoided by creating a new session or changing the session ID when the user logs in.
 
 http.sessionManagement((session) -> session 
 		.sessionFixation(sesionFixation -> sessionFixation
@@ -324,11 +361,24 @@ Authentication Events:
 **********************
 To handle events after success or failure of authentication. We have to create a bean with annotation @Component and use AuthenticationSuccessEvent (onSuccess(AuthenticationSuccessEvent event)) and AbstractAuthenticationFailureEvent (onFailure AbstractAuthenticationFailureEvent event )by annotating @EventListener in the respective methods.
 
-GrandedAuthority Interface 
-We can use the Bean GrantedAuthorityDefaults by having our own prefix for a role instead of having default prefx "ROLE_"
+GrantedAuthority Interface 
+	*) GrantedAuthorityDefaults in Spring Security is a class that allows you to customize the default prefix that Spring Security adds to roles (authorities), instead of having default prefix "ROLE_"
 
+	*) GrantedAuthorityDefaults lets you change this default prefix or remove it altogether.
+	
+	*) // Remove the default "ROLE_" prefix
+    @Bean
+    GrantedAuthorityDefaults grantedAuthorityDefaults() {
+        return new GrantedAuthorityDefaults(""); // No prefix
+    }
+
+	*) // Set "PREFIX" as the prefix for all roles/authorities
+    @Bean
+    public GrantedAuthorityDefaults grantedAuthorityDefaults() {
+        return new GrantedAuthorityDefaults("PREFIX_");
+    } 
+	
 logging.level.org.springframework.security ---  to show all the filters
-We can implement Filter or GenericFilterBean(capable or reading environment variables) or OncePerRequestFilter interface for customized filter.
 
 Form Login:
 ***********
@@ -386,7 +436,7 @@ AUTHORIZATION:
 *************
 
 GrantedAuthority interface is used by SimpleGrantedAuthority class.
-Authority is like a individual privillage or action. Role is a group of previleges/actions.
+Authority is like a individual privillege or action. Role is a group of previleges/actions.
 
 To create custom prefix for role instead of prefix ROLE_:
 ---------------------------------------------------------
@@ -465,6 +515,7 @@ We can club @Prefilter and @PostFilter
 
 FILTERS:
 ========
+We can implement Filter or GenericFilterBean(capable of reading environment variables) or OncePerRequestFilter interface for customized filter.
 
 @EnableWebSecurity(debug=true) : Will give all the filters executed in logs . Annotate on top of the application.
 
@@ -561,4 +612,102 @@ Best approach is JWKS
 
 OpenID Connect:
 ---------------
+OpenID connect is a protocol that sits on top of OAuth2.  OAUTH2 provides authorization via an access token containing scopes, OpenID connect provides authentication by introducing a new ID Token which contains information & claims for identity.
 
+Here client receives access token & ID Token.
+
+OIDC standardizes teh scope to openid, profile, email & address.
+
+OIDC exposes the standardized "/userinfo" endpoint.
+
+(client_id,redirect_uri,scope="openid+profile+email",state, reponse_type="code", noce="") nonce is optional. It ties the ID Token to a session so no one can misuse the ID Token.
+
+#######################################################################################################################################################################################
+
+Implementing OAUTH2:
+====================
+Spring Security has inbuld support for Google, Okta, Facebook, Github as Enum class for  social login.
+
+
+We can create login by 2 ways one by as below and another by giving details of client-id & client-secret of Authe server in application.properties file.
+Steps:
+------
+1.) To implement we have to give http.oauth2Login() in SecurityConfig class.
+2) Create a bean as below
+	@Bean
+	ClientRegistrationRepository clientRegistrationRepository(){
+		ClientRegistration gitHub = clientRegistration():
+		ClientRegistration faceBook = clientRegistration():
+		return InMemoryClientRegistrationRepository(gitHub, facebook);
+	}
+3) Create a method as below for social login. For multiple social login we can create as many as blelow for each.
+
+	private ClientRegistration clientRegistration(){
+		return CommonOauth2Provider.GITHUB.getBuilder("github").clientId("clientId").clientSecret("clientSecret").build();
+	}
+	
+For oauth2 the Authentication object will be OAuth2AuthenticationToken.
+
+#######################################################################################################################################################################################
+
+OAUTH2 & Keyclock:
+==================
+
+Have to use dependency spring-boot-starter-oauth2-resource-server as our application is the resource server.
+
+ID token is used when grant type is of Authorization Flow. For Client Credentials Flow use access token.
+
+For JWT Token:
+--------------
+
+1) Create a class for KeyclockRoleConverter by implementing Converter<Jwt(input), Collection<GrantedAuthority>(output)> for extracting the roles information from the token and converts that to SimpleGrantedAuthority.
+
+2) Override convert method in Converter interface which accepts JWT token as input & return Collection<GrantedAuthority>
+	public Collection<GrantedAuthority> convert(Jwt source){
+	
+	}
+
+3) In SecurityFilterChain method of SecurityConfig do the below:
+	JwtAuthenticationConverter jwtAuthConverter = new JwtAuthenticationConverter();
+	jwtAuthConverter.setJwtGrantedAuthoritiesConverter(new KeyclockRoleConverter()); //The class created earlier
+	
+	http.oauth2ResourceServer(rsc -> rsc.jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(jwtAuthConverter))); // rsc.jwt() To inform jwt is the format of our token. It can be opaque also based on our need.
+	
+4) In application.properties give the details of application created in Authentication Server(Keyclock)
+
+5) spring.security.oauth2.resourceserver.jwt.jwt-set-uri = https://{authserverPath}/{application}/protocol/openid-connect/certs :- is the path where the public keys for validating the access token without connecting to the auth server.
+
+https://{authserverPath}/{application}./well-known/openid-configuartion will give all the details of the Auth server
+
+
+For Opaque Token:
+-----------------
+1. Create a class for KeyclockOpaqueRoleConverter by implementing OpaqueTokenAuthenticationConverter() for extracting the roles information from the token and converts that to SimpleGrantedAuthority.
+
+2. Override the method convert
+	public Authentication convert(String introspectedToken, OAuth2AuthenticatedPrincipal authenticatedPrincipal){
+		.......
+		return new UsernamePasswordAuthenticationToken(name , null, roles)
+	}
+	
+3. In application.properties add the below	
+	*) spring.security.oauth2.resourceserver.opaque.introspection-uri =
+	*) spring.security.oauth2.resourceserver.opaque.introspection-client-id =
+	*) spring.security.oauth2.resourceserver.opaque.introspection-client-secret =
+	
+4) In SecurityFilterChain method in SecurityConfig class give the below
+   http.oauth2ResourceServer(rsc -> rsc.opaqueToken(otc -> otc.authenticationConverter(new KeyclockOpaqueRoleConverter()).introspectionUri(introspectionUri).introspectionClientCredentials(clientId, clientSecret)));
+   
+
+Notes:
+
+*) In scope if openid is not given then IdToken wont be there in response from auth server.
+
+
+#######################################################################################################################################################################################
+
+OAUTH2 Auth Server Using Spring:
+================================
+
+
+Add dependency OAuth2 Authorization Server which will add Spring Security also.
