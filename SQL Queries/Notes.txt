@@ -46,6 +46,24 @@ SELECT StudentName, TheoryMarks FROM StudentGrades ORDER BY TheoryMarks DESC, St
 The query will sort the result set by TheoryMarks in descending order and then by StudentName in ascending order for rows with the same marks.
 
 
+SUBSTRING:
+##########
+
+SUBSTRING(StudentName, start_position, length)
+	*) start_position: The position in the string where you want to start extracting.
+	*) length: The number of characters you want to extract.
+
+For example, if you want to check if the third character of StudentName is 'a', you can write:
+SELECT * FROM StudentGrades WHERE SUBSTRING(StudentName, 3, 1) = 'a';
+	
+
+SELECT * FROM StudentGrades WHERE  SUBSTRING(StudentName, 2) = 'iana';
+* ) SUBSTRING(StudentName, 2) extracts the substring from the "StudentName" starting at position 2 (the second character) to the end of the string.
+
+SELECT * FROM StudentGrades WHERE SUBSTRING(StudentName, -1) = 'a';
+*) SUBSTRING(StudentName, -1) is intended to extract a substring from the "StudentName" starting from the last character (because of the -1).
+
+
 JOINS:
 ######
 
