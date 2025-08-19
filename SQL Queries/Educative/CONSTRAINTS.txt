@@ -96,7 +96,6 @@ ADD CONSTRAINT ConstraintName UNIQUE (ColumnName1, ColumnName2);
 ALTER TABLE TableName DROP INDEX  ConstraintName;
 
 
-
 Alternate solutions
 %%%%%%%%%%%%%%%%%%%
 
@@ -116,7 +115,6 @@ CREATE TABLE Employees (
     EmpName VARCHAR(100) UNIQUE,
     Salary  DECIMAL(10, 2)
 );
-
 
 
 Without using UNIQUE

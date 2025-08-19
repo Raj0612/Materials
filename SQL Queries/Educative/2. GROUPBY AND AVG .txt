@@ -44,7 +44,7 @@ SELECT   Subject, MAX(Marks) FROM StudentGrades GROUP BY Subject;
 
 SELECT DISTINCT Subject, 
        (SELECT max(Marks) FROM StudentGrades AS S2 WHERE S1.Subject = S2.Subject)
-       AS TotalMarks
+       AS HigestMarks
 FROM   StudentGrades AS S1;
 
 

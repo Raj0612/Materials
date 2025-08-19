@@ -97,7 +97,12 @@ SELECT SUM(Marks) AS TotalMarksMaths FROM   StudentGrades WHERE  Subject = 'Math
 
 Using the CASE statement:
 *************************
-SELECT SUM(CASE WHEN Subject = 'Mathematics' THEN Marks ELSE 0 END) AS TotalMarksMaths FROM StudentGrades;
+SELECT SUM(CASE 
+			WHEN Subject = 'Mathematics' 
+				THEN Marks 
+				ELSE 0 
+		   END) AS TotalMarksMaths 
+		FROM StudentGrades;
 
 
 Finding the sum of each subject in the StudentGrades table:

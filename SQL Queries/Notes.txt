@@ -1,6 +1,5 @@
 Filtering with aggregate functions (AVG, SUM, etc.) in the WHERE clause is not possible because the WHERE clause filters individual rows.
 
-
 The UNION operator combines the output of two or more SELECT statements.
 
  
@@ -29,8 +28,10 @@ SELECT  Column1, Column2 FROM TableName ORDER BY Column1 ASC;
 
 In ORDER BY, mentioning the name of the column is not necessary, and numbers representing the occurrence of the column in SELECT query can also work. The numbers start from 1, corresponding to the first column in the SELECT query as shown below, which is equivalent to the above query.
 
+LIMIT:
+######
 
-*) SELECT  Column1, Column2, Column3 FROM TableName ORDER BY 1, 3;
+*) SELECT  Column1, Column2, Column3 FROM TableName ORDER BY column LIMIT 1, 3;
 
 The LIMIT clause limits the records to a specified value. The LIMIT clause uses two values. One of them is offset, which is optional, and the other is the limit of records. The default value for offset is 0. The following is the syntax of the LIMIT clause:
 
