@@ -1,0 +1,140 @@
+
+
+1) Service Class:
+=================
+
+@Service
+public class UserService {
+
+    public void serve() throws InterruptedException {
+        Thread.sleep(1000);
+        System.out.println("Service method executed");
+    }
+
+    public void assist() {
+        System.out.println("Assist method executed");
+    }
+
+    public String greet(String name) {
+        System.out.println("Greet method executed");
+        return "Hello, " + name;
+    }
+
+    public void throwError() {
+        System.out.println("ThrowError method executed");
+        throw new RuntimeException("Something went wrong!");
+    }
+}
+
+
+2) Aspect Class with Various Advices:
+=====================================
+
+@Aspect
+@Component
+public class LoggingAspect {
+
+    // Pointcut for all methods in UserService
+    @Pointcut("execution(* com.example.demo.service.UserService.*(..))")
+    public void userServiceMethods() {}
+
+    // Before advice
+    @Before("userServiceMethods()")
+    public void beforeAdvice(JoinPoint joinPoint) {
+        System.out.println("Before: " + joinPoint.getSignature());
+    }
+
+    // After advice (runs regardless of method outcome)
+    @After("userServiceMethods()")
+    public void afterAdvice(JoinPoint joinPoint) {
+        System.out.println("After: " + joinPoint.getSignature());
+    }
+
+    // AfterReturning advice (runs only if method returns successfully)
+    @AfterReturning(pointcut = "userServiceMethods()", returning = "result")
+    public void afterReturningAdvice(JoinPoint joinPoint, Object result) {
+        System.out.println("After Returning: " + joinPoint.getSignature() + ", Result: " + result);
+    }
+
+    // AfterThrowing advice (runs only if method throws exception)
+    @AfterThrowing(pointcut = "userServiceMethods()", throwing = "ex")
+    public void afterThrowingAdvice(JoinPoint joinPoint, Throwable ex) {
+        System.out.println("After Throwing: " + joinPoint.getSignature() + ", Exception: " + ex.getMessage());
+    }
+
+    // Around advice (runs before and after method execution)
+    @Around("userServiceMethods()")
+    public Object aroundAdvice(ProceedingJoinPoint pjp) throws Throwable {
+        System.out.println("Around (before): " + pjp.getSignature());
+        Object result = pjp.proceed();
+        System.out.println("Around (after): " + pjp.getSignature());
+        return result;
+    }
+}
+
+
+*) Add @EnableAspectJAutoProxy on your main application class (annotated with @SpringBootApplication), or
+Create a separate configuration class with @EnableAspectJAutoProxy
+
+@Configuration
+@EnableAspectJAutoProxy
+public class AppConfig {
+    // Other bean definitions if needed
+}
+
+CUSTOM ANNOTATIONS:
+###################
+
+1) Create Custom Annotation:
+============================
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface TrackTime {
+}
+
+@TrackTime is a custom annotation to mark methods for which execution time should be tracked.
+
+2) Create Aspect Class:
+=======================
+@Aspect
+@Component
+public class PerformanceAspect {
+
+    // Pointcut for methods annotated with @TrackTime
+    @Pointcut("@annotation(com.example.TrackTime)")
+    public void trackTimeAnnotation() {}
+
+    // Around advice to measure method execution time
+    @Around("trackTimeAnnotation()")
+    public Object measureExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+        long start = System.currentTimeMillis();
+
+        Object proceed = joinPoint.proceed();
+
+        long executionTime = System.currentTimeMillis() - start;
+        System.out.println(joinPoint.getSignature() + " executed in " + executionTime + "ms");
+
+        return proceed;
+    }
+}
+
+3) Use Custom Annotation in Service:
+====================================
+
+@Service
+public class UserService {
+
+    @TrackTime
+    public void serve() throws InterruptedException {
+        // Simulate method execution time
+        Thread.sleep(2000);
+        System.out.println("Service method executed");
+    }
+}
+
+4) Enable AspectJ Support in Configuration:
+===========================================
+@Configuration
+@EnableAspectJAutoProxy
+public class AppConfig {
+}

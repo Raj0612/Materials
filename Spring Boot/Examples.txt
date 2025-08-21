@@ -1,0 +1,618 @@
+@ResponseBody : - @ResponseBody is a Spring annotation used in web applications to indicate that the return value of a controller method should be written directly to the HTTP response body (usually as JSON or XML), rather than rendering a view (like a JSP or HTML page).
+
+@RestController :- @Controller + @ResponseBody
+
+public class UserController {
+
+    @GetMapping("/user")
+    @ResponseBody
+    public User getUser() {
+        return new User("john_doe", "john@example.com");
+    }
+}
+
+***************************************************************************************************************************************************************************************
+
+
+@Valid is used on method parameters to trigger validation of the object.
+@Validated is used on the class level or method parameter to support validation groups.
+BindingResult holds the validation results and must immediately follow the validated parameter.
+If there are validation errors, you can handle them using BindingResult.
+
+
+// Validation groups
+interface CreateGroup {}
+interface UpdateGroup {}
+
+@Controller
+@RequestMapping("/user")
+@Validated  // Enables group validation at class level
+public class UserController {
+
+    @GetMapping("/form")
+    public String showForm(@ModelAttribute("user") User user) {
+        return "userForm"; // Assume a view named userForm.html or JSP
+    }
+
+    // Handle form submission with @Valid (default group)
+    @PostMapping("/create")
+    @ResponseBody
+    public String createUser(@Validated(CreateGroup.class) @ModelAttribute User user, BindingResult result) {
+        if (result.hasErrors()) {
+            return "Validation errors: " + result.getAllErrors();
+        }
+        return "User created: " + user.getUsername();
+    }
+
+    // Handle update with different validation group
+    @PostMapping("/update")
+    @ResponseBody
+    public String updateUser(@Validated(UpdateGroup.class) @ModelAttribute User user, BindingResult result) {
+        if (result.hasErrors()) {
+            return "Validation errors: " + result.getAllErrors();
+        }
+        return "User updated: " + user.getUsername();
+    }
+}
+
+
+public class User {
+
+    @NotBlank(groups = {CreateGroup.class, UpdateGroup.class})
+    @Size(min = 3, max = 20, groups = {CreateGroup.class, UpdateGroup.class})
+    private String username;
+
+    @NotBlank(groups = CreateGroup.class)
+    @Email(groups = CreateGroup.class)
+    private String email;
+
+
+    public User() {}
+
+    public User(String username, String email) {
+        this.username = username;
+        this.email = email;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+}
+
+
+How it works:
+*) When /user/create is called, validation is performed for the CreateGroup group.
+*) When /user/update is called, validation is performed for the UpdateGroup group.
+*) Validation errors are captured in BindingResult and can be handled gracefully.
+*) @Validated enables group validation, while @Valid does not support groups.
+
+***************************************************************************************************************************************************************************************
+ResponseEntity:
+###############
+
+ResponseEntity is a powerful class in Spring MVC that represents the entire HTTP response, including the status code, headers, and body. It extends HttpEntity by adding an HTTP status code.
+
+
+@RestController
+public class UserController {
+
+    @GetMapping("/user")
+    public ResponseEntity<User> getUser() {
+        User user = new User("john_doe", "john@example.com");
+          return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @GetMapping("/user/notfound")
+    public ResponseEntity<String> getUserNotFound() {
+        // Return error message with HTTP 404 Not Found status
+        return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+    }
+}
+
+class User {
+    private String username;
+    private String email;
+
+    public User(String username, String email) {
+        this.username = username;
+        this.email = email;
+    }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+}
+
+***************************************************************************************************************************************************************************************
+
+Validation with @Valid, Custom Exception Handling with @ControllerAdvice and ResponseEntityExceptionHandler:
+############################################################################################################
+
+
+public class User {
+
+    @NotBlank(message = "Username is mandatory")
+    @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
+    private String username;
+
+    @NotBlank(message = "Email is mandatory")
+    @Email(message = "Email should be valid")
+    private String email;
+
+    public User() {}
+
+    public User(String username, String email) {
+        this.username = username;
+        this.email = email;
+    }
+
+}
+
+
+@RestController
+public class UserController {
+
+    @PostMapping("/users")
+    public ResponseEntity<String> createUser(@Valid @RequestBody User user) {
+        // If validation passes, this method is called
+        return ResponseEntity.ok("User created: " + user.getUsername());
+    }
+}
+
+
+@ControllerAdvice
+public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    // Handle validation errors
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, 
+            HttpHeaders headers,
+            HttpStatus status, 
+            WebRequest request) {
+
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String message = error.getDefaultMessage();
+            errors.put(fieldName, message);
+        });
+
+        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    }
+
+    // Handle all other exceptions
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
+
+***************************************************************************************************************************************************************************************
+
+Content negotiation:
+####################
+
+Content negotiation in Spring allows your REST API to serve different representations of the same resource based on client preferences, such as JSON or XML, or different languages.
+
+Here’s a simple example demonstrating content negotiation for JSON and XML responses, and language negotiation using the Accept and Accept-Language headers.
+
+
+1. Add Dependency for XML Support:
+==================================
+
+<dependency>
+    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <artifactId>jackson-dataformat-xml</artifactId>
+</dependency>
+
+
+2. Sample Entity:
+=================
+
+public class User {
+    private String username;
+    private String email;
+
+    // Constructors, getters, setters
+
+    public User() {}
+
+    public User(String username, String email) {
+        this.username = username;
+        this.email = email;
+    }
+
+    // getters and setters
+}
+
+3. Controller with Content and Language Negotiation:
+====================================================
+
+@RestController
+public class UserController {
+
+    @GetMapping(value = "/user", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+    public User getUser(@RequestHeader(name = "Accept-Language", required = false) Locale locale) {
+        // Simple language-based greeting (for demo)
+        String username = "john_doe";
+        String email = "john@example.com";
+
+        if (locale != null) {
+            if (locale.getLanguage().equals("nl")) {
+                username = "jan_de_voorbeeld";
+                email = "jan@voorbeeld.nl";
+            } else if (locale.getLanguage().equals("fr")) {
+                username = "jean_exemple";
+                email = "jean@exemple.fr";
+            }
+        }
+
+        return new User(username, email);
+    }
+}
+
+***************************************************************************************************************************************************************************************
+
+Internationalization (i18n):
+############################
+
+1. Create message properties files
+==================================
+Create the following files under src/main/resources:
+
+	*) messages.properties (default, e.g., English)
+		greeting=Hello, {0}!
+	*) messages_nl.properties (Dutch)
+		greeting=Hallo, {0}!
+	*) messages_fr.properties (French)
+		greeting=Bonjour, {0}!
+
+2. Configure MessageSource bean:(It's optional)
+================================
+
+@Configuration
+public class InternationalizationConfig {
+
+    @Bean
+    public MessageSource messageSource() {
+        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+        // Base name of the message files
+        messageSource.setBasename("classpath:messages");
+        messageSource.setDefaultEncoding("UTF-8");
+        return messageSource;
+    }
+}
+
+3. Use MessageSource in Controller:
+===================================
+
+@RestController
+public class GreetingController {
+
+    @Autowired
+    private MessageSource messageSource;
+
+    @GetMapping("/greet")
+    public String greet(@RequestHeader(name = "Accept-Language", required = false) Locale locale) {
+        if (locale == null) {
+            locale = Locale.ENGLISH; 
+        }
+        // Retrieve localized message with parameter
+        return messageSource.getMessage("greeting", new Object[]{"John"}, locale);
+    }
+}
+
+*) Locale  locale = LocalContextHolder.getLocale(); We can use this also if not getting the header in the method paraeter.
+
+***************************************************************************************************************************************************************************************
+
+VERSIONING:
+###########
+
+class PersonV1 {
+    private String firstName;
+    private String lastName;
+
+    public PersonV1(String firstName, String lastName) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+}
+
+class PersonV2 {
+    private Name name;
+
+    public PersonV2(Name name) {
+        this.name = name;
+    }
+ }
+
+class Name {
+    private String firstName;
+    private String lastName;
+
+    public Name(String firstName, String lastName) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+}
+
+1) Versioning via URL Path:
+===========================
+
+@RestController
+@RequestMapping("/v1")
+public class PersonV1Controller {
+
+    @GetMapping("/person")
+    public PersonV1 getPersonV1() {
+        return new PersonV1("John", "Doe");
+    }
+}
+
+@RestController
+@RequestMapping("/v2")
+public class PersonV2Controller {
+
+    @GetMapping("/person")
+    public PersonV2 getPersonV2() {
+        return new PersonV2(new Name("John", "Doe"));
+    }
+}
+
+GET http://localhost:8080/v1/person
+GET http://localhost:8080/v2/person
+
+2) Versioning via Request Parameter:
+====================================
+
+@RestController
+@RequestMapping("/person")
+public class PersonParamVersioningController {
+
+    @GetMapping(params = "version=1")
+    public PersonV1 getPersonV1() {
+        return new PersonV1("John", "Doe");
+    }
+
+    @GetMapping(params = "version=2")
+    public PersonV2 getPersonV2() {
+        return new PersonV2(new Name("John", "Doe"));
+    }
+}
+			
+			(or)
+
+@RestController
+@RequestMapping()
+public class PersonParamVersioningController {
+
+    @GetMapping(path="/person" params="version=1")
+    public PersonV1 getPersonV1() {
+        return new PersonV1("John", "Doe");
+    }
+
+    @GetMapping(path="/person" params="version=2")
+    public PersonV2 getPersonV2() {
+        return new PersonV2(new Name("John", "Doe"));
+    }
+}
+
+GET http://localhost:8080/person?version=1
+GET http://localhost:8080/person?version=2
+
+3) Versioning via Custom Header:
+================================
+
+@RestController
+@RequestMapping("/person")
+public class PersonHeaderVersioningController {
+
+    @GetMapping(headers = "X-API-VERSION=1")
+    public PersonV1 getPersonV1() {
+        return new PersonV1("John", "Doe");
+    }
+
+    @GetMapping(headers = "X-API-VERSION=2")
+    public PersonV2 getPersonV2() {
+        return new PersonV2(new Name("John", "Doe"));
+    }
+}
+
+GET http://localhost:8080/person with header X-API-VERSION: 1 or 2
+
+4) Versioning via Media Type (Content Negotiation):
+===================================================
+
+@RestController
+@RequestMapping("/person")
+public class PersonProducesVersioningController {
+
+    @GetMapping(produces = "application/vnd.company.app-v1+json")
+    public PersonV1 getPersonV1() {
+        return new PersonV1("John", "Doe");
+    }
+
+    @GetMapping(produces = "application/vnd.company.app-v2+json")
+    public PersonV2 getPersonV2() {
+        return new PersonV2(new Name("John", "Doe"));
+    }
+}
+
+GET http://localhost:8080/person with header Accept: application/vnd.company.app-v1+json or application/vnd.company.app-v2+json
+
+***************************************************************************************************************************************************************************************
+
+HATEOS:
+#######
+
+Spring HATEOAS to add hypermedia links to your REST API responses using EntityModel and WebMvcLinkBuilder.
+
+
+1. Add Dependency:
+==================
+dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-hateoas</artifactId>
+</dependency>
+
+2. Sample Entity:
+=================
+public class Person {
+    private String firstName;
+    private String lastName;
+
+    public Person(String firstName, String lastName) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+}
+
+3. Controller with HATEOAS Links:
+=================================
+@RestController
+public class PersonController {
+
+    @GetMapping("/person/{id}")
+    public EntityModel<Person> getPerson(@PathVariable String id) {
+        Person person = new Person("John", "Doe");
+
+        EntityModel<Person> resource = EntityModel.of(person);
+
+        // Add self link
+        resource.add(linkTo(methodOn(PersonController.class).getPerson(id)).withSelfRel());
+
+        // Add link to all persons (example of related resource)
+        resource.add(linkTo(methodOn(PersonController.class).getAllPersons()).withRel("all-persons"));
+
+        return resource;
+    }
+
+    @GetMapping("/persons")
+    public String getAllPersons() {
+        // Just a placeholder for example
+        return "List of all persons";
+    }
+}
+
+4. How it works:
+================
+*) EntityModel.of(person) wraps the Person object.
+*) linkTo(methodOn(...)) creates links to controller methods.
+*) withSelfRel() adds a "self" link.
+*) withRel("all-persons") adds a link with a custom relation name.
+
+
+5. Sample JSON Response:
+========================
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/person/1"
+    },
+    "all-persons": {
+      "href": "http://localhost:8080/persons"
+    }
+  }
+}
+
+***************************************************************************************************************************************************************************************
+
+FILTER:
+#######
+
+1) Static Filtering:
+====================
+
+*) Use @JsonIgnore on fields to exclude them from JSON serialization.
+*) Use @JsonIgnoreProperties on class level to ignore multiple fields.
+
+@JsonIgnoreProperties({"password", "ssn"})
+public class User {
+
+    private String username;
+
+    @JsonIgnore
+    private String internalCode;
+
+    private String password;
+
+    private String ssn;
+
+    private String email;
+
+    public User(String username, String internalCode, String password, String ssn, String email) {
+        this.username = username;
+        this.internalCode = internalCode;
+        this.password = password;
+        this.ssn = ssn;
+        this.email = email;
+    }
+
+}
+
+2) Dynamic Filtering:
+=====================
+
+*) Use @JsonFilter on the class.
+*) Define filters in the controller method using MappingJacksonValue.
+
+@JsonFilter("UserFilter")
+public class User {
+
+    private String username;
+    private String password;
+    private String email;
+    private String ssn;
+
+    public User(String username, String password, String email, String ssn) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.ssn = ssn;
+    }
+}
+
+Controller:
+-----------
+
+@RestController
+public class UserController {
+
+    @GetMapping("/user")
+    public MappingJacksonValue getUser() {
+        User user = new User("john_doe", "secret", "john@example.com", "123-45-6789");
+
+        // Define which fields to include
+        SimpleBeanPropertyFilter filter = SimpleBeanPropertyFilter.filterOutAllExcept("username", "email");
+
+        // Associate filter with filter id "UserFilter"
+        SimpleFilterProvider filters = new SimpleFilterProvider().addFilter("UserFilter", filter);
+
+        MappingJacksonValue mapping = new MappingJacksonValue(user);
+        mapping.setFilters(filters);
+
+        return mapping;
+    }
+}
+
+***************************************************************************************************************************************************************************************

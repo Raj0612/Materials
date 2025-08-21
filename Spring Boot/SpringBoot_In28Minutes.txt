@@ -20,6 +20,11 @@ Spring Container:
 Bean Factory
 ApplicationContext
 	-- ClassPathXMLApplicationContext
+	-- AnnotationConfigApplicationContext
+	
+ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+MyService myService = context.getBean(MyService.class);
+  myService.performAction();
 	
 
 Annotations:
@@ -27,7 +32,7 @@ Annotations:
 @Configuration :- Indicates that a class declared one or more @Bean methods 
 @Component :- To indicate that class is a bean. An instance of class will be managed by Spring framework. Used on the class. Autowiring will be done by Field, Setter or Constructor Injection.
 @Bean :- Used on method to create bean. Autowiring will be done by method call or method parameters. Recommended for Instantiating Beans for 3rd Party libraries. 
-@ComponentScan("packageName")  :- To tell the application to search for Components in that package
+@ComponentScan(basePackages = "packageName")  :- To tell the application to search for Components in that package
 @Primary :- Indicates that a bean should be given preference when multiple candidates are qualified to autowire
 @Qualifier(qualifierName) :- Can be used on a field or parameter for candidate beans when autowiring. Can also be added along with @Component
 	@Component
@@ -79,9 +84,9 @@ logging.level.packageName = info :- Will give the logs of the package(packageNam
 positive Matches :- Will get auto configured
 negative matches :- Will not be auto configured
 
-Dispather Servlet -- (DispatcherServletAutoConfiguration)
+Dispatcher Servlet -- (DispatcherServletAutoConfiguration)
 Spring Boot automatically configures error page for us.(ErrorMvcAutoConfiguration)
-Bean to JSON and Vise versa (JaksonHttpMessageConvertesConfiguration)
+Bean to JSON and Vise versa (JaksonHttpMessageConvertersConfiguration)
 Embedded Servlet Container (EmbeddedWebServerFactoryCustomizerAutoConfiguration)
 
 spring.profiles.active = name :- For setting profiles
@@ -107,7 +112,7 @@ BeanPropertyRowMapper :- If the bean properties and the database column names ar
 
 Spring JPA:
 -----------
-@Transactional : Annotate this on the repository class
+@Transactional : Annotate this on the repository class: Use @Transactional to ensure your database operations are executed safely and consistently as a single unit of work, with automatic rollback on errors.
 EntityManger is used to manage the Entity
 
 entityMangerObject.merge : for insert, update
@@ -119,7 +124,7 @@ Spring Data JPA:
 ----------------
 To make Spring JPA more simple.
 
-spring.jpa.defer-datasource-initalization=true :- To inform spring run the data.sql after initialiing the tables(Entity), else it will run before initializing the tables
+spring.jpa.defer-datasource-initalization=true :- To inform spring run the data.sql after initializing the tables(Entity), else it will run before initializing the tables
 
 Mostly we use jakarta classes than Hibernate coz using Hibernate directly would result in a lock in to Hibernate. We cant use other JPA like Toplink for example
 
@@ -154,18 +159,23 @@ spring.mvc.format.date=yyyy-MM-dd   :- mm(small) will be for minute :- To format
 SPRING BOOT:
 ************
 
+@RequestBody( Class obj) :- To send the object as input. @ResponseBody is a Spring annotation used in web applications to indicate that the return value of a controller method should be written directly to the HTTP response body (usually as JSON or XML), rather than rendering a view (like a JSP or HTML page).
+
 @RestController :- @Controller + @ResponseBody
 DispatcherServletAutoConfiguration
 
 @ResponseBody + JaksonHttpMessageConverters :- Converst object to json
 
 @PathVariable :- For capturing the value in the path. 
+
+path is: helloword/raj
+
 @GetMapping(path=helloword/{name}) 
 public HelloWorldBean helloWord(@PathVariable String name){
 
 }
 
-@RequestBody( Class obj) :- To send the object as input
+
 
 Status Code:
 ------------
@@ -177,10 +187,11 @@ Status Code:
 301 :- A 301 redirect shows that the requested URL is “permanently” moved to the long URL. Since it is permanently redirected, the browser caches the response, and subsequent requests for the same URL will not be sent to the URL shortening service. Instead, requests are redirected to the long URL server directly.
 302 :- A 302 redirect means that the URL is “temporarily” moved to the long URL, meaning that subsequent requests for the same URL will be sent to the URL shortening service first. Then, they are redirected to the long URL server.
 401 :- UnAuthorized
+403 :- Forbidden
 400 :- Bad Request such as Validation Error
 429 :- A user has sent too many requests 
 
-ResponseEntity :- Extension of HttpEntity that adds an HttpStatusCode
+ResponseEntity :- ResponseEntity is a powerful class in Spring MVC that represents the entire HTTP response, including the status code, headers, and body. It extends HttpEntity by adding an HTTP status code.
 
 URI location  = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId()).toUri();
 return ResponseEntity.created(location).build(); :- To return the location in the header(location: URI Location) along with the response code 201.
@@ -193,14 +204,14 @@ Generic Exception:
 -----------------
 @ControllerAdvice :- Annotate on top of the user defined Exception Handling class
 ResonseEntityExceptionHandler :- Extend this class and override the handleException method for user defined error response.
-@ExceptionHandler(Exception.class) :- Annotate on top of handleException method to capture the Exception of type define in the Excpetion.class
+@ExceptionHandler(Exception.class) :- Annotate on top of handleException method to capture the Exception of type defined in the Exception.class
 
 Validations:
 ------------
 spring-boot-starter-validation :- dependency
 
 @Valid :- Add on the method parameter before the POJO which needs to be validated.
-handleMethodArgumentNotValid() : override this method on the User Defined Exception class which implementing ResonseEntityExceptionHandler. This will be used for if any validation error messages in the fields.
+handleMethodArgumentNotValid() : override this method on the User Defined Exception class which implements ResonseEntityExceptionHandler. This will be used if any validation error messages in the fields.
 
 Swagger & Open API:
 -------------------
@@ -217,7 +228,9 @@ Example:
 	
 How to do:
 	Accept Header(MIME types - application/xml, application/json ...)
+		Accept :  application/json
 	Accept-Language Header(en, nl, fr ....)
+		Accept-Language : nl 
 jackson-dataformat-xml :- Dependency for XML response.
 
 Internationalization:
@@ -226,10 +239,9 @@ Use Accept-Language Header for internationalization.
 Steps:
 	1) Create message.properties file for each language
 	2) Autowire MessageSource 
-	3) a]  Locale  locale = LocalContextHolder.getLocale()
+	3) a] Locale  locale = LocalContextHolder.getLocale();
 	   b] messageSource.getMessage("propertyName", null, "Default Message", locale)
 	
-
 
 Versioning:
 -----------
@@ -307,6 +319,8 @@ HAL Explorer:
 -------------
 spring-data-rest-hal-explorer :- Dependency
 
+HAL Explorer is a web-based tool (usually integrated into Spring HATEOAS) that allows you to navigate your REST API interactively by following the hypermedia links embedded in the responses. It helps developers and clients explore the API without needing separate documentation.
+
 url is http://localhost:8080/explorer
 #######################################################################################################################################################################################
 
@@ -324,11 +338,11 @@ Run Time:
 	
 @Before :- Do something before a method is called
 @After :- Do something after a method is executed irrespective of  Method executes succesfully or throws an exception.
-@After Returning :- Do something only whenaa method executes succesfully.
+@After Returning :- Do something only when a method executes succesfully.
 @After Throwing :- Do something only when method throws an exception.
 @Around :- Do something before and after a method execution.
 
-Used Defined Annotation can be used in Aspect for specific methods which we want.
+User Defined Annotation can be used in Aspect for specific methods which we want.
 Create an interface for annotation. and use that annotation in method which we want.
 Pointcut("@annotation(packageName)") :- Given in common annotation class..
 
@@ -519,7 +533,7 @@ const params = useParams();
 params.userName 
 	or
 const{userName} = useParams();
-console.log(useName);
+console.log(userName);
 	
 use Link To instead of <a href="/path", beacause <a> will refresh the entire page
 <Link to=""/> Link can be used in component which is part of Router Component
@@ -531,7 +545,7 @@ To use in another component:
 
 import the context in the component
 import {context} from 'path'
-cont cont = useContext(context)
+const cont = useContext(context)
 
 Navigate :- Used to Navigate to the path
 <Navigate to="/"/>
@@ -581,7 +595,7 @@ CORS: Cross Origin Resource Sharing
 	@CrossOrigin(origins ="") :- Allow from specific origins
 	
 By default spring security disables frames. 
-http.headers().frameOptions().sameOrigin() :- Specify to allo any request that comes from the same origin to frame this application.
+http.headers().frameOptions().sameOrigin() :- Specify to allow any request that comes from the same origin to frame this application.
 
 Spring Security Authorization:
 ------------------------------
