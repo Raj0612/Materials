@@ -226,3 +226,77 @@ Types of Dependency Injection:
 
 1. Constructor Injection:
 =========================
+
+@Component
+public class UserService {
+
+    private final EmailService emailService;
+
+    // Constructor Injection
+    public UserService(EmailService emailService) {
+        this.emailService = emailService;
+    }
+
+    public void registerUser(String username) {
+        System.out.println("Registering user: " + username);
+        emailService.sendEmail(username);
+    }
+}
+
+@Component
+public class EmailService {
+    public void sendEmail(String recipient) {
+        System.out.println("Sending email to " + recipient);
+    }
+}
+
+
+2. Setter Injection:
+====================
+
+@Component
+public class UserService {
+
+    private EmailService emailService;
+
+    // Setter Injection
+    @Autowired
+    public void setEmailService(EmailService emailService) {
+        this.emailService = emailService;
+    }
+
+    public void registerUser(String username) {
+        System.out.println("Registering user: " + username);
+        emailService.sendEmail(username);
+    }
+}
+
+@Component
+public class EmailService {
+    public void sendEmail(String recipient) {
+        System.out.println("Sending email to " + recipient);
+    }
+}
+
+
+3. Field Injection:
+===================
+
+@Component
+public class UserService {
+
+    @Autowired
+    private EmailService emailService;
+
+    public void registerUser(String username) {
+        System.out.println("Registering user: " + username);
+        emailService.sendEmail(username);
+    }
+}
+
+@Component
+public class EmailService {
+    public void sendEmail(String recipient) {
+        System.out.println("Sending email to " + recipient);
+    }
+}

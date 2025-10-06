@@ -34,7 +34,9 @@ for http BasicAuthenticationFilter will be used
 Spring security doesnt enforce CSRF protection for the reading(GET) operation. But for POST, PUT we have to disable.
 
 UserDetailsService used to load the user from the storage systems.
-Authentication object to determine if the authentication is successful or not.
+Authentication implemented by UsernamePasswordAuthenticationToken object to determine if the authentication is successful or not.
+
+SpringBootWebSecurityConfiguration.java has teh default configuration
 
 Classes & Interfaces:
 *********************
@@ -102,12 +104,13 @@ DaoAuthenticationProvider :-  Is used to authenticate users against a database o
 
 PasswordEncoder:
 ***************
-{noop}value :- Dont encode password use the plain password.
+{noop}value :- Dont encode password, use the plain password.
 PasswordEncoderFactories.createDelegatingPasswordEncoder() :- Contains all the password encoder supported by Spring Security. 
 	 @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
+	
 BCryptPasswordEncoder :- default password encoder. It has 3 versions ($2a, $2b, $2y). Default strength value is 10. Strength value should be between 4 and 31.
 Argon2PasswordEncoder :- It is the advanced one.
 
@@ -231,71 +234,6 @@ spring.config.activate-on.profile = uat
 
 #######################################################################################################################################################################################
 
-CORS:
-*****
-@CrossOrign annotated on top of the class or method like below
-@CrossOrign(origins= "websiteName")
-@CrossOrign(origins= "*")
-
-We have to use CorsConfigurationSource interface in our SecurityConfig class. This is the recommended one.
-Using CorsConfigurationSource we can set AllowedOrigins, AllowedMethods, AllowCredentials, AllowedHeaders, MaxAge, ExposedHeaders
-
-https.cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource(){
-	@Override
-	public CorsConfiguration getCOrsConfiguartion(HttpServletRequest request){
-		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowedOrigins(Collections.singletonList("url"));
-		config.setAllowedMethods(Collections.singletonList("*"));
-		config.setAllowedHeaders(Collections.singletonList("*"));
-		config.setExposedHeaders(Arrays.asList("Authorization")); // To expose header from backend to UI
-		config.setMaxAge(3600L);
-		return config;
-	}
-}));
-
-Browser will send a preflight request to the backend to know the CORS configuartion.  Backend should send Access-Control-Allow-Origin header which has the allowed orign configured in Spring as value.  Then only the actual API will be called.
-
-CSRF:
-*****
-By default CSRF will be applied to POST, DELETE, PUT which are used to alter the data.
-
-CSRF Token : Used to prevent CSRF attack. It will be unique per user session. It is also called as XSRF token. CSRF Token should be sent by the UI to the backend in each request  either in header or payload along with CSRF cookie by the browser.
-
-CsrfToken interface is used to create the CSRF Token by Spring. Use CookieCsrfTokenReposity class for storing CSRF Token in cookie is better than storing in session.
-
-To create custom CSRFCookieFilter:
----------------------------------- 
-Create a class CSRFCookieFilter by extending OncePerRequestFilter and override doFilterInternal method.
-
-Add this is SecurityConfig class
-	http.csrf(csrfConfig -> csrfConfig.csrfTokenRepository(CookieCsrfTokenReposity.withHttpOnlyFalse()))
-		.addFilterAfter(new CSRFCookieFilter(), BasicAuthenticationFilter.class)
-
-Note:
------
-withHttpOnlyFalse :- js code also will be able read the cookie.  withHttpOnlyFalse refers to configuring a cookie with the HttpOnly attribute set to false.
-
-Points:
-@@@@@@@
-
-*) HttpOnly is a flag you can set on cookies to tell browsers that the cookie should not be accessible via client-side scripts (like JavaScript). This is a security feature to help prevent cross-site scripting (XSS) attacks from stealing cookies.
-
-*) If HttpOnly is true (the default and recommended for session cookies), the cookie cannot be accessed by JavaScript.
-
-*) If withHttpOnlyFalse means setting HttpOnly to false, it allows client-side scripts to access the cookie.
-
-*) Generally, avoid setting HttpOnly to false for sensitive cookies like session IDs or authentication tokens.
-
-To read CSRF token on each Request:
-------------------------------------
-1) Create object of CsrfTokenRequestAttributeHandler in SecurityConfig class.
-2) Add  .csrf(csrfConfig -> csrfConfig.csrfTokenRequestHandler(CsrfTokenRequestAttributeHandlerObj)) in SecurityFilterChain.
-
-CsrfFilter is responsible for validating the CsrfToken
-
-If csrf is not disabled we will get 403(Forbidden) status code error .
-
-#######################################################################################################################################################################################
 
 Security Customizations:
 ========================
@@ -306,6 +244,8 @@ requiresChannel method will be used to secure with HTTPs protocol.
 	 http.requiresChannel(rcc -> rcc.anyRequest().requiresSecure()). Define in the SecurityConfig class 
 	 http.requiresChannel(rcc -> rcc.anyRequest().requiresInSecure()). For using only http
 	 
+	 http.redirectToHttps((https) -> https.requestMatchers(AnyRequestMatcher.INSTANCE) :- For new version of Spring security
+	 
 Exception Handling:
 *******************
 401 Code : Authentication Failure
@@ -315,7 +255,15 @@ Exception Handling:
 
 ExceptionTranslationFilter handles exception related to authentication(AuthenticationException) and authorization(AccessDeniedException) thrown within the filter chain.
 
+Implementation of AuthenticationEntryPoint:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+LoginUrlAuthenticationEntryPoint : -
+BasicAuthenticationEntryPoint
+
 Implement below interfaces for custom exception for authentication & authorization
+
+Custom AuthenticationEntryPoint:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Step 1:
 	Create a CustomAuthenticationEntryPointClass which implements AuthenticationEntryPoint and override the commence method.
@@ -323,16 +271,19 @@ Step 2:
 	Define in SecurityConfig class under the SecurityFilterChain
 	http.httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomAuthenticationEntryPointClass())) : For only http bacic flow
 	http.exceptionHandling(ehc -> ehc.authenticationEntryPoint(new CustomAuthenticationEntryPointClass())) :	Globally for all authentication failures  e.g., form login, HTTP Basic, OAuth, etc.)
-	For http.formLogin we cannot 
-	
+	For http.formLogin we cannot : For form login deal with UI pages not with JSON Resonse or Headers.
+
+Custom AccessDeniedHandler:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Step 1: 
 	Create a CustomAccessDeniedHandlerClass which implements AccessDeniedHandler and override the handle method.
 Step 2:
 	Define in SecurityConfig class under the SecurityFilterChain. It should be done at globally
 	http.exceptionHandling(ehc -> ehc.accessDeniedHandler(new CustomAccessDeniedHandlerClass()).accesDeniedPage("/denied")) : accesDeniedPage is optional. Use accesDeniedPage if we are exposing the api to other application.
 
-Session:
-********
+Session Management:
+*******************
 Default time for a session is 30 minutes. JsessionID will be for 30 minutes by default
 http.sessionManagement method will be used for session handling in SecurityConfig class
 http.sessionManagement(smc -> smc.invalidSessionUrl("/path") )
@@ -341,16 +292,28 @@ server.servlet.session.timeout = 20m :- property can use used for setting sessio
 maximumsessions(1) & maxSessionsPreventsLogin(true) - to restrict conncurrent session to specified number
 http.sessionManagement(smc -> smc.invalidSessionUrl("/path").maximumsessions(1).maxSessionsPreventsLogin(true).expiredUrl("/path"))
 
+maxSessionsPreventsLogin(true) : So already a session in active. New session wont create for the user and invalidate the previous. If not mentioned previous seesion will be invalidated and new one will be created.
+
+Session Hacking:
+~~~~~~~~~~~~~~~~
 If we use HTTPS protocol, hackers cant steal the session ID. Https prevents Session Hijacking.
 Session Hijacking can be prevented by having sesson timeout for less time.
 
 Session Fixation can be avoided by creating a new session or changing the session ID when the user logs in.
 
+Session Fixaction can be avoided by below ways:
+
+1) changeSessionId
+2) newSession
+3) migrateSession
+
+By default spring will use changeSessionId strategy. We can change that by adding below code.
+
 http.sessionManagement((session) -> session 
 		.sessionFixation(sesionFixation -> sessionFixation
 		.newSession())
 		);
-By default spring will use changeSessionId strategy.
+
 
 Preventions of Sesson Hijacking:
 --------------------------------
@@ -361,31 +324,12 @@ Authentication Events:
 **********************
 To handle events after success or failure of authentication. We have to create a bean with annotation @Component and use AuthenticationSuccessEvent (onSuccess(AuthenticationSuccessEvent event)) and AbstractAuthenticationFailureEvent (onFailure AbstractAuthenticationFailureEvent event )by annotating @EventListener in the respective methods.
 
-GrantedAuthority Interface 
-	*) GrantedAuthorityDefaults in Spring Security is a class that allows you to customize the default prefix that Spring Security adds to roles (authorities), instead of having default prefix "ROLE_"
-
-	*) GrantedAuthorityDefaults lets you change this default prefix or remove it altogether.
-	
-	*) // Remove the default "ROLE_" prefix
-    @Bean
-    GrantedAuthorityDefaults grantedAuthorityDefaults() {
-        return new GrantedAuthorityDefaults(""); // No prefix
-    }
-
-	*) // Set "PREFIX" as the prefix for all roles/authorities
-    @Bean
-    public GrantedAuthorityDefaults grantedAuthorityDefaults() {
-        return new GrantedAuthorityDefaults("PREFIX_");
-    } 
-	
-logging.level.org.springframework.security ---  to show all the filters
-
 Form Login:
 ***********
 
 http.formLogin(flc -> flc.loginPage("/login").userNameParameter("userId").passwordParmeter("pwd").defaultSuccessUrl("/path").failureUrl("/login?error=true")).
 
-To Handle custom handler after successful authentication:
+To handle custom handler after successful authentication:
 ---------------------------------------------------------
 Step 1: 
 	Create a CustomAuthenticationSuccessHandler class by implementing AuthenticationSuccessHandler(Abstract) with annotation @Component and implement the onAuthenticationSuccess method.
@@ -412,6 +356,25 @@ Logout:
 	.successHandler(customSuccessObj).failureHandler(customFailureObj)
 	.logout(loc -> loc.logoutSuccessUrl("/login?logout=true")));
 
+GrantedAuthority Interface:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	*) GrantedAuthorityDefaults in Spring Security is a class that allows you to customize the default prefix that Spring Security adds to roles (authorities), instead of having default prefix "ROLE_"
+
+	*) GrantedAuthorityDefaults lets you change this default prefix or remove it altogether.
+	
+	*) // Remove the default "ROLE_" prefix
+    @Bean
+    GrantedAuthorityDefaults grantedAuthorityDefaults() {
+        return new GrantedAuthorityDefaults(""); // No prefix
+    }
+
+	*) // Set "PREFIX" as the prefix for all roles/authorities
+    @Bean
+    public GrantedAuthorityDefaults grantedAuthorityDefaults() {
+        return new GrantedAuthorityDefaults("PREFIX_");
+    } 
+	
+logging.level.org.springframework.security = Trace  :- to show all the filters
 
 Thread Strategy:
 ****************
@@ -424,6 +387,7 @@ Modes are below:
 	MODE_THREADLOCAL(default)
 	MODE_INHERITABLETHREADLOCAL :- use this in the case of an asynchronous method.
 	MODE_GLOBAL :- Makes all the thread of an application see the same security context instance.
+
 	
 Load User:
 **********
@@ -431,6 +395,79 @@ Authentication authentication = SecurityContextHolder.getContext().getAuthentica
 String name = authentication.getName();
 
 #######################################################################################################################################################################################
+
+CORS & CSRF:
+============
+
+CORS:
+*****
+@CrossOrign annotated on top of the class or method like below
+@CrossOrign(origins= "websiteName")
+@CrossOrign(origins= "*")
+
+We have to use CorsConfigurationSource interface in our SecurityConfig class. This is the recommended one.
+Using CorsConfigurationSource we can set AllowedOrigins, AllowedMethods, AllowCredentials, AllowedHeaders, MaxAge, ExposedHeaders
+
+https.cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource(){
+	@Override
+	public CorsConfiguration getCorsConfiguartion(HttpServletRequest request){
+		CorsConfiguration config = new CorsConfiguration();
+		config.setAllowedOrigins(Collections.singletonList("url"));
+		config.setAllowedMethods(Collections.singletonList("*"));
+		config.setAllowedHeaders(Collections.singletonList("*"));
+		config.setExposedHeaders(Arrays.asList("Authorization")); // To expose header from backend to UI
+		config.setMaxAge(3600L);  // To tell the browser remember this configuration for 1 hour. SO for 1 hour no need to perform the CORS check for multiple times.
+		return config;
+	}
+}));
+
+Browser will send a preflight request to the backend to know the CORS configuartion.  Backend should send Access-Control-Allow-Origin header which has the allowed orign configured in Spring as value.  Then only the actual API will be called.
+
+CSRF:
+*****
+By default CSRF will be applied to POST, DELETE, PUT which are used to alter the data.
+
+CSRF Token : Used to prevent CSRF attack. It will be unique per user session. It is also called as XSRF token. CSRF Token should be sent by the UI to the backend in each request  either in header or payload along with CSRF cookie by the browser.
+
+Javascript can read the cookie from same domain not on another.
+
+CsrfToken interface is used to create the CSRF Token by Spring. Use CookieCsrfTokenReposity class for storing CSRF Token in cookie is better than storing in session. 
+CsrfFilter is responsible for validating the CsrfToken
+
+To create custom CSRFCookieFilter:
+---------------------------------- 
+Create a class CSRFCookieFilter by extending OncePerRequestFilter and override doFilterInternal method.
+
+Add this is SecurityConfig class
+	http.csrf(csrfConfig -> csrfConfig.csrfTokenRepository(CookieCsrfTokenReposity.withHttpOnlyFalse()))
+		.addFilterAfter(new CSRFCookieFilter(), BasicAuthenticationFilter.class)
+
+Note:
+-----
+withHttpOnlyFalse :- js code also will be able read the cookie.  withHttpOnlyFalse refers to configuring a cookie with the HttpOnly attribute set to false.
+
+Points:
+^^^^^^^
+
+*) HttpOnly is a flag you can set on cookies to tell browsers that the cookie should not be accessible via client-side scripts (like JavaScript). This is a security feature to help prevent cross-site scripting (XSS) attacks from stealing cookies.
+
+*) If HttpOnly is true (the default and recommended for session cookies), the cookie cannot be accessed by JavaScript.
+
+*) If withHttpOnlyFalse means setting HttpOnly to false, it allows client-side scripts to access the cookie.
+
+*) Generally, avoid setting HttpOnly to false for sensitive cookies like session IDs or authentication tokens.
+
+To read CSRF token on each Request:
+------------------------------------
+1) Create object of CsrfTokenRequestAttributeHandler in SecurityConfig class.
+2) Add  .csrf(csrfConfig -> csrfConfig.csrfTokenRequestHandler(CsrfTokenRequestAttributeHandlerObj)) in SecurityFilterChain.
+
+CsrfFilter is responsible for validating the CsrfToken
+
+If csrf is not disabled we will get 403(Forbidden) status code error .
+
+#######################################################################################################################################################################################
+
 
 AUTHORIZATION:
 *************
@@ -466,6 +503,51 @@ Step 1: Create a class AuthorizationEvents annotated with @Component
 Step 2: Override onFailure(AuthorizationDeniedEvent ade) and annotate with @EventListener
 
 #######################################################################################################################################################################################
+
+FILTERS:
+========
+We can implement Filter or GenericFilterBean(capable of reading environment variables) or OncePerRequestFilter interface for customized filter.
+GenericFilterBean :- Whenever we have a requirement to read th servlet related init-param defined in web.xml, To read Servlet Context details or environment property details.
+OncePerRequestFilter :- Filter is executed only once for each request.
+
+OncePerRequestFilter extends GenericFilterBean which extends Filter. It has methods shouldNotFilter
+
+@EnableWebSecurity(debug=true) : Will give all the filters executed in logs . Annotate on top of the application.
+
+After filters are executed the request will be forwared to Dispatcher Servlet.
+
+Custom Filters are used for Input Validation, Tracing, Auditing & Reporting, Logging of input like IP Address, Encryption & Decryption.
+
+Some inbuilt filters are:
+~~~~~~~~~~~~~~~~~~~~~~~~~
+AbstractAuthenticationProcessingFilter
+AuthorizationFilter
+DefaultLoginPageGeneratingFilter
+UserNamePasswordAuthenticationFilter
+BasicAuthenticationFilter
+ExceptionTranslationFilter
+CsrfFilter
+CorsFilter
+
+We can create custom filters by implementing Filter Interface or by extending abstract classes GenericFilterBean or OncePerRequestFilter which already extends GenericFilterBean.
+OncePerRequestFilter  :- Filter will execute only once for each request.
+By using GenericFilterBean we can read the Servlet details defined in web.xml.
+
+We can specify when our filter to execute in the SecurityFilterChain defined in @Configuration class as below:
+
+addFilterBefore(customFilterClassObject, InbuildFilter.class)
+addFilterAfter(customFilterClassObject, InbuildFilter.class)
+addFilterAt(customFilterClassObject, InbuildFilter.class)  :- Spring Security will decide randomly which filter to execute.
+addFilter(customFilterClassObject) :- For this we have mention @Order(3) on top of the CustomFilter Class.
+
+If our custom filer should not execute, We should override shouldNotFilter method in OncePerRequestFilter and return true there.
+
+private boolean shouldNotFilter(HttpServletRequest req) throws ServletException{
+	return true;
+}
+
+#######################################################################################################################################################################################
+
 
 Method Level Security:
 ======================
@@ -509,45 +591,12 @@ public List<Contact> saveContact(@RequestBody List<Contact> contacts){
 
 }
 
+We can use the @PostFilter on Spring Data Repository methods as well to filter any unwanted data coming from the database.
 We can club @Prefilter and @PostFilter
 
 #######################################################################################################################################################################################
 
-FILTERS:
-========
-We can implement Filter or GenericFilterBean(capable of reading environment variables) or OncePerRequestFilter interface for customized filter.
-
-@EnableWebSecurity(debug=true) : Will give all the filters executed in logs . Annotate on top of the application.
-
-After filters are executed the request will be forwared to Dispatcher Servlet.
-
-Custom FIlters are used for Input Validation, Tracing, Auditing & Reporting, Logging of input like IP Address, Encryption & Decryption.
-
-Some inbuilt filters are 
-UserNamePasswordAuthenticationFilter
-BasicAuthenticationFilter
-DefaultLoginPageGeneratingFilter
-
-We can create custom filters by implementing Filter Interface or by extending abstract classes GenericFilterBean or OncePerRequestFilter which already extends GenericFilterBean.
-OncePerRequestFilter  :- Filter will execute only once for each request.
-By using GenericFilterBean we can read the Servlet details defined in web.xml.
-
-We can specify when our filter to execute in the SecurityFilterChain defined in @Configuration class as below:
-
-addFilterBefore(customFilterClassObject, InbuildFilter.class)
-addFilterAfter(customFilterClassObject, InbuildFilter.class)
-addFilterAt(customFilterClassObject, InbuildFilter.class)
-addFilter(customFilterClassObject) :- For this we have mention @Order(3) on top of the CustomFilter Class.
-
-If our custom filer should not execute, We should override shouldNotFilter method in OncePerRequestFilter and return true there.
-
-private boolean shouldNotFilter(HttpServletRequest req) throws ServletException{
-	return true;
-}
-
-#######################################################################################################################################################################################
-
-A dedicated Auth server is needed to validate this token, but JWT same server can validate also it can contain user information.
+OPAQUE TOKEN:- It has no inherent meaning A dedicated Auth server is needed to validate this token, but JWT same server can validate also it can contain user information.
 
 JWT TOKEN:
 *********
@@ -583,10 +632,10 @@ OAuth2 has grant types as below
 *) Password Grand(Legacy) 
 
 1)AuthorizationCode - Flow will be by 2 types 
-	*) To get the authorizaton code(clientId, response_type="code", scope(READ, WRITE etc), state(CSRF token to protect from CSRF attacks), redirect_uri) . Authe server will send code and the state with value which we send earlier
+	*) To get the authorizaton code(clientId, response_type="code", scope(READ, WRITE etc), state(CSRF token to protect from CSRF attacks), redirect_uri) . Auth server will send code and the state with value which we send earlier
 	*) Then to get access token(clientId , clientSecret , authcode, grant_type="authorization_code", redirect_uri). In both redirect_uri needs to be send.
 	
-2)Implict Grand Flow - (client_id,redirect_uri,scope,state, reponse_type="token"). ClientSecret is not involved since it is a get request. Here only one request to auth server to get the access token. It's not secure as the token value will be redirected in the url. In response we will get the access_token along with the state with value which we send earlier
+2)Implict Grand Flow - (client_id, redirect_uri, scope, state, reponse_type="token"). ClientSecret is not involved since it is a get request. Here only one request to auth server to get the access token. It's not secure as the token value will be redirected in the url. In response we will get the access_token along with the state with value which we send earlier
 
 3)Proof Key For Code Exchange(PKCE) -- Used for public clients(native and SPA) as public clients cannot securely store a Client Secret. Using code_verifier only the code_challenge(has value of code_verifier) is created by using the code_challenge_method.
 	*) To get Authorization code (clientId, redirect_uri, scope, state, reponse_type="code", code_challenge, code_challenge_method=SH256). Authorization Server stores the code_challenge and sends the authorization code.
@@ -596,7 +645,7 @@ OAuth2 has grant types as below
 	*) To get access token (client_id, client_secret, scope, grant_type="password" username="" , password="")
 	
 5) Client Credentials Grant Type :- Used when no end user involved, means when 2 backend application tries to communicate.
-	*)  To get access toke (client_id, client_secret, scope, grant_type="client_credentials"). We can use this flow if there are no user and ui involved.
+	*)  To get access token (client_id, client_secret, scope, grant_type="client_credentials"). We can use this flow if there are no user and ui involved.
 	
 6) Refreh Token Grant Flow: 
 	*) When using AuthorizationCode & PKCE grant flow we will get access token and refresh token.
@@ -680,6 +729,10 @@ For JWT Token:
 https://{authserverPath}/{application}./well-known/openid-configuartion will give all the details of the Auth server
 
 
+To download certs from keyclock
+spring.security.oauth2.resourceserver.jwt.jwk-set-uri=${JWK_SET_URI:http://localhost:8180/realms/eazybankdev/protocol/openid-connect/certs}
+
+
 For Opaque Token:
 -----------------
 1. Create a class for KeyclockOpaqueRoleConverter by implementing OpaqueTokenAuthenticationConverter() for extracting the roles information from the token and converts that to SimpleGrantedAuthority.
@@ -702,7 +755,10 @@ For Opaque Token:
 Notes:
 
 *) In scope if openid is not given then IdToken wont be there in response from auth server.
-
+*) The certicatate from IAM will be download on the first request not on application startup.
+*) For Opaque only we have to give introspection-uri , introspection-client-id &  introspection-client-secret. 
+*) For JWT we have to give only jwt.jwk-set-uri.
+*) In Keyclock Standard flow means Authorization Grand Type Flow
 
 #######################################################################################################################################################################################
 

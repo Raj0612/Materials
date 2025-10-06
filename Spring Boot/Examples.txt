@@ -540,7 +540,7 @@ public class PersonController {
 FILTER:
 #######
 
-1) Static Filtering:
+1) Static Filtering: Fixed fields to exclude globally
 ====================
 
 *) Use @JsonIgnore on fields to exclude them from JSON serialization.
@@ -570,7 +570,7 @@ public class User {
 
 }
 
-2) Dynamic Filtering:
+2) Dynamic Filtering: Select fields per request
 =====================
 
 *) Use @JsonFilter on the class.
