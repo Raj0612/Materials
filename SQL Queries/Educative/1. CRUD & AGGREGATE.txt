@@ -192,7 +192,11 @@ AGGREGATE RECORDS Using COUNT
 To Find students absent during test:
 ------------------------------------
 SELECT COUNT(*) AS AbsentStudents FROM   StudentGrades WHERE  Marks IS NULL;
-SELECT SUM(CASE WHEN Marks IS NULL THEN 1 ELSE 0 END) AS AbsentStudents FROM   StudentGrades;
+SELECT SUM(CASE 
+			WHEN Marks IS NULL 
+				THEN 1 
+				ELSE 0 
+			END) AS AbsentStudents FROM   StudentGrades;
 SELECT SUM(IF(Marks IS NULL, 1, 0)) AS AbsentStudents FROM   StudentGrades;
 SELECT COUNT(*) - COUNT(Marks) AS AbsentStudents FROM  StudentGrades; --(negated condition)
 

@@ -57,6 +57,10 @@ SELECT * FROM StudentGrades WHERE  RIGHT(StudentName, 1) = 'a';
 SELECT * FROM StudentGrades WHERE  SUBSTRING(StudentName, -1) = 'a';
 Note: The SUBSTR() and MID()functions are same as the SUBSTRING() function.
 
+To Get all last 3 characters of studentName:
+---------------------------------------------
+SELECT StudentName, RIGHT(StudentName, 3) AS Last3Chars FROM StudentGrades;
+
 SELECT * FROM StudentGrades WHERE  StudentName REGEXP 'a$';
 Note: The LIKE operator is same as REGEXP. It stands for Regular Expression LIKE.
 

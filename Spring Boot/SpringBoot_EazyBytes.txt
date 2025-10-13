@@ -89,7 +89,9 @@ BEAN SCOPES
 4)Session (@SessionScope)
 5)Application(@ApplicationScope) -- Same as Singleton but instance is for servletContext not for ApplicationContext.
 
+Lombok
 
+@Data doesnt include @AllArgsConstructor
 
 #######################################################################################################################################################################################
 
@@ -854,3 +856,10 @@ All other paths will support only GET
 DEPLOYING INTO AWS:
 *******************
 AWS EC2 or AWS Elastic Beanstalk :- Used for deploying APP in AWS
+
+spring.datasource.sql.init.mode = always :- To look for schema.sql file in resources
+
+
+Spring Cloud Netflix's Eureka :- For Service Discovery agent
+Spring Cloud Load Balancer :- For client side load balancing
+Netflix Feign Client :- To look up for service b/w microservices

@@ -26,9 +26,8 @@ VALUES
 The GROUP BY Clause and the AVG
 ###############################	
 	
----SQL QUERY THAT TELLS US THE AVERAGE OF MARKS FOR EACH SUBJECT
-----------------------------------------------------------------
-
+---SQL QUERY THAT TELLS US THE AVERAGE OF MARKS FOR EACH SUBJECT:
+-----------------------------------------------------------------
 SELECT   Subject, AVG(Marks) AS averageMarks FROM  StudentGrades GROUP BY Subject;
 
 SELECT DISTINCT Subject, 
@@ -37,9 +36,8 @@ SELECT DISTINCT Subject,
 FROM   StudentGrades AS S1;
 
 
---FINDING THE HIGHEST MARKS IN EACH SUBJECT
--------------------------------------------
-
+--FINDING THE HIGHEST MARKS IN EACH SUBJECT:
+--------------------------------------------
 SELECT   Subject, MAX(Marks) FROM StudentGrades GROUP BY Subject;
 
 SELECT DISTINCT Subject, 
@@ -48,10 +46,8 @@ SELECT DISTINCT Subject,
 FROM   StudentGrades AS S1;
 
 
-
---CALCULATING THE AVERAGE PRICE IN EACH CATEGORY
-------------------------------------------------
-
+--CALCULATING THE AVERAGE PRICE IN EACH CATEGORY:
+-------------------------------------------------
 SELECT Category, AVG(Price) FROM Products GROUP BY Category; 
 
 ***************************************************************************************************************************************************************************************
@@ -79,7 +75,6 @@ INSERT INTO Products (ProductID, ProductName, Category, Price, UnitsSold) VALUES
 
 --SQL QUERY THAT TELLS US THE SUM OF PRICES FOR EACH CATEGORY.
 --------------------------------------------------------------
-
 SELECT Category, SUM(Price) AS TotalPrice FROM Products GROUP BY Category;
 
 
