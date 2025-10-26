@@ -1,0 +1,3 @@
+https://martinfowler.com/eaaCatalog/dataTransferObject.html
+
+https://www.lucidchart.com/blog/ddd-event-storming

@@ -1,7 +1,7 @@
 EazyBytes
 *********
 Introduced in April 2014
-Spring Context:
+Spring Context:[IOC Container]
 --------------
 BeanFactory
 ApplicationContext
@@ -13,14 +13,12 @@ Bean can be created with Annotation @Bean, @Component(Should be added above the 
 @ComponentScan - Added above the Configuration classes. Instruct Spring where to find the classes marked with sterotype annotations
 
 @ComponentScan(basePackages={"packageName1", "packageName2"})
-@ComponentScan(basePackageClasses={"packageName1.ClassName.class", "packageName2.ClassName.class"})
+@ComponentScan(basePackageClasses={"packageName1.ClassName.class", "packageName2.ClassName.class"}) . This can be added on top of the class where @Configuration is defined also.
 
 Exception:
 ----------
-NoSuchBeanDefinitionException : Occurs when we create multiple objects of same type and try to fetch the bean from context by type(context.getBean(ClassName.class))
-UnSatisfiedDependencyExcpetion
-NoUniqueBeanDefinitionException - To resolve context.getBean("beanName", ClassName.class); Here beanName is the name of the method or the name of the bean.
-
+*) NoUniqueBeanDefinitionException : Occurs when we create multiple objects of same type and try to fetch the bean from context by type(context.getBean(ClassName.class))
+	To resolve context.getBean("beanName", ClassName.class); Here beanName is the name of the method or the name of the bean.
 @Bean("name=beanName"), @Bean("value=beanName"), @Bean("beanName")
 public Vehicle getVehicle1(){
 	var veh = new Vehicle();
@@ -28,6 +26,9 @@ public Vehicle getVehicle1(){
 }
 context.getBean("getVehicle1", Vehicle.class)
 
+*) NoSuchBeanDefinitionException :- IF bean is not available
+*) UnSatisfiedDependencyExcpetion :- Due to circular reference
+ 
 
 @Component :- Will be given on top of the class to create a bean. Its a sterotype annotation.
 
@@ -83,7 +84,7 @@ We cannot add sterotype annotation on Interfaces
 
 BEAN SCOPES
 ***********
-1)Singleton -- Default Scope. @Scope(BeanDefinition.SCOPE_SINGLETON) -- It will be for bean. Same instance for each bean(per ApplicationContext)not for the entire application
+1)Singleton -- Default Scope. @Scope(BeanDefinition.SCOPE_SINGLETON) -- It will be for bean. One instance for each bean(per ApplicationContext) of same type , not for the entire application
 2)Prototype
 3)Request(@RequestScope) : Annotate on top of the class. A bean will created for each request. The class will also should be annotated with @Component or Sterotype annotations
 4)Session (@SessionScope)
@@ -863,3 +864,6 @@ spring.datasource.sql.init.mode = always :- To look for schema.sql file in resou
 Spring Cloud Netflix's Eureka :- For Service Discovery agent
 Spring Cloud Load Balancer :- For client side load balancing
 Netflix Feign Client :- To look up for service b/w microservices
+
+
+#######################################################################################################################################################################################		

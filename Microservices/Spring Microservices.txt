@@ -1,0 +1,575 @@
+Gateway, Routing & Cross Cutting Concerns:
+==========================================
+
+EdgeServer or API Gateway: Server that sits on the edge of our microservice network and monitor all theincoming & outgoing requests.
+
+Cross Cutting Concerns : logging, auditing, security & routing
+
+Spring Cloud Gateway is used to create EdgeServer or API Gateway
+
+Zuul is an alternative to Spring Cloud Gateway.
+
+Spring Cloud Gateway is build on spring Reactor & Spring WebFlux provides circuit breaker integration, service discovery with Eureka, non blocking in nature has a superior performance compared to Zuul.
+
+Some of the Gateway Handler filter functions in Spring Cloud Gateway:
+
+*) AddRequestHeader Filter
+*) AddRequestHeadersIfNotPresent Filter
+*) AddRequestParameter Filter
+*) AddResponseHeader Filter
+*) CircuitBreaker Filter
+*) FallbackHeaders Filter
+*) LoadBalancer Filter
+*) ModifyRequestBody Filter & ModifyResponseBody Filter
+*) RateLimiter Filter
+*) RedirectTo Filter
+*) Retry Filter
+*) SetPath Filter
+*) RewritePath Filter
+*) RequestSize Filter
+*) SetStatus Filter
+
+
+spring.management.endpoint.gateway.access = unrestricted   :- To enable gateway related enpoints in actuator
+spring.cloud.discovery.locator.enabled = true    : To connect with the Eureka(discovery) server  and locate all the details about microservices
+spring.cloud.discovery.locator.enabled = false  :- To connect with the Eureka(discovery) server  and locate the details about microservices the path defined. To disable default behaviour
+spring.cloud.discovery.locator.lowerCaseServiceId = true   :- To accept service name with lower case
+
+
+
+
+
+Connect gateway server to EdgeServer to get information of microservice path
+
+http://localhost:8072/actuator/gateway/routes 
+
+We can create our own path by using the bean RouteLocator in main Application and use the filters. We can also do in application properties but its better to do by Java way
+
+@Bean
+public RouteLocator eazyBankRouteConfig(RouteLocatorBuilder routeLocatorBuilder) {
+	return routeLocatorBuilder.routes()
+					.route(p -> p
+							.path("/eazybank/accounts/**")
+							.filters( f -> f.rewritePath("/eazybank/accounts/(?<segment>.*)","/${segment}")
+									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString())) // To set the header in response use addResponseHeader filter
+							.uri("lb://ACCOUNTS"))
+					.route(p -> p
+							.path("/eazybank/loans/**")
+							.filters( f -> f.rewritePath("/eazybank/loans/(?<segment>.*)","/${segment}")
+									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString()))
+							.uri("lb://LOANS"))
+					.route(p -> p
+							.path("/eazybank/cards/**")
+							.filters( f -> f.rewritePath("/eazybank/cards/(?<segment>.*)","/${segment}")
+									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString()))
+							.uri("lb://CARDS")).build();
+
+
+	}
+
+Adding Custom Filter:
+######################
+Creating Custom Filter by implementing GlobalFilter:
+----------------------------------------------------
+
+1) Create a class FilterName by implementing Global Filter by annotating @Component
+2) Autowire FilterUtility filterUtility;
+3) Override  public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) method.
+
+Here Mono is for single Object. Flux is for collecton of objects. FilterUtility is util to get value or set value in headers.
+
+Creating Custom Filter by using GlobalFilter Bean:
+--------------------------------------------------
+
+1) Create a class FilterName by annotating @Configuration
+2) Autowire FilterUtility filterUtility;
+3) Create a Bean for GlobalFilter
+	@Bean
+    public GlobalFilter postGlobalFilter() {
+        return (exchange, chain) -> {
+            return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+                HttpHeaders requestHeaders = exchange.getRequest().getHeaders();
+                String correlationId = filterUtility.getCorrelationId(requestHeaders);
+                logger.debug("Updated the correlation id to the outbound headers: {}", correlationId);
+                exchange.getResponse().getHeaders().add(filterUtility.CORRELATION_ID, correlationId);
+            }));
+        };
+    }
+	
+Design Patterns Around Gateway:
+-------------------------------
+*) Backend For Frontend(BFF) Pattern : For each client(web, mobile, Tablet) there wil be separate Gateway
+*) Gateway Aggregator/Composition Pattern : Combining the microservices info by sending a single request in network and gateway will send request to each microservice.
+
+***************************************************************************************************************************************************************************************
+
+Making Microservices Resilient
+==============================
+
+Resilience4j is a fault tolerance library for Java applications.
+
+Circuit Breaker Pattern is used to handle resilience.
+
+States of Circuit Breaker Pattern:
+
+CLOSED : Accepts all the requests
+OPEN : If it sees a threshold requests are failing, then it will OPEN the circuit which will make requests fail fast.
+HALF_OPEN : Allow few requests. Baed on the result it will either go to OPEN or CLOSED
+
+Circuit Breaker Pattern can be implemented in Gateway server or individual microservices.
+
+Implementing in Gateway Server:
+------------------------------
+
+1) Add dependency spring-cloud-starter-circuitbreaker-reactor-resilience4j
+2) Add circuitBreaker Filter in method of class Main
+
+	public RouteLocator eazyBankRouteConfig(RouteLocatorBuilder routeLocatorBuilder) {
+		return routeLocatorBuilder.routes()
+						.route(p -> p
+								.path("/eazybank/accounts/**")
+								.filters( f -> f.rewritePath("/eazybank/accounts/(?<segment>.*)","/${segment}")
+										.addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
+										.circuitBreaker(config -> config.setName("accountsCircuitBreaker")  // For CircuitBreaker
+												.setFallbackUri("forward:/contactSupport")))   // For fallback if any excepetion happens 
+								.uri("lb://ACCOUNTS"))
+					.route(p -> p
+							.path("/eazybank/loans/**")
+							.filters( f -> f.rewritePath("/eazybank/loans/(?<segment>.*)","/${segment}")
+									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
+									.retry(retryConfig -> retryConfig.setRetries(3)
+											.setMethods(HttpMethod.GET)
+											.setBackoff(Duration.ofMillis(100),Duration.ofMillis(1000),2,true)))
+							.uri("lb://LOANS"))
+					.route(p -> p
+							.path("/eazybank/cards/**")
+							.filters( f -> f.rewritePath("/eazybank/cards/(?<segment>.*)","/${segment}")
+									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
+									.requestRateLimiter(config -> config.setRateLimiter(redisRateLimiter())
+											.setKeyResolver(userKeyResolver())))
+							.uri("lb://CARDS")).build();
+	}
+
+3) Add below in application.properties
+
+spring.resilience4j.circuitbreaker.configs.default.slidingWindowSize=10
+spring.resilience4j.circuitbreaker.configs.default.permittedNumberOfCallsInHalfOpenState=2
+spring.resilience4j.circuitbreaker.configs.default.failureRateThreshold=50   :- Its in percentage
+spring.resilience4j.circuitbreaker.configs.default.waitDurationInOpenState=10000   :- Its milliseconds
+
+Here default means for all services
+if "accountsCircuitBreaker" is placed instead of default then its for account service.
+
+Implementing in Individual Microservice:
+----------------------------------------
+
+1) Add dependency 
+	spring-cloud-starter-circuitbreaker-resilience4j
+	
+2) In application.properties 
+ 
+spring.cloud.openfeign.circuitbreaker.enabled=true  :- To enable circuitBreaker
+spring.resilience4j.circuitbreaker.configs.default.slidingWindowSize=10
+spring.resilience4j.circuitbreaker.configs.default.permittedNumberOfCallsInHalfOpenState=2
+spring.resilience4j.circuitbreaker.configs.default.failureRateThreshold=50   :- Its in percentage
+spring.resilience4j.circuitbreaker.configs.default.waitDurationInOpenState=10000   :- Its milliseconds
+
+3) Create a Fallback class and annotate with Component
+
+@Component
+public class CardsFallback implements CardsFeignClient{
+
+    @Override
+    public ResponseEntity<CardsDto> fetchCardDetails(String correlationId, String mobileNumber) {
+        return null;
+    }
+
+}	
+
+4) Add fallback = FallbackClassName.class on top of interface annotated with @FeignClient
+	
+@FeignClient(name="cards", fallback = CardsFallback.class)
+public interface CardsFeignClient {
+
+    @GetMapping(value = "/api/fetch",consumes = "application/json")
+    public ResponseEntity<CardsDto> fetchCardDetails(@RequestHeader("eazybank-correlation-id")
+                                                         String correlationId, @RequestParam String mobileNumber);
+}
+
+
+Http Timout Configuration:
+--------------------------
+
+It can be given for Global or Per Route:
+
+For Global:
+~~~~~~~~~~~
+Add below in application.properties of Gateway server so it can be global for all microservices
+
+spring.cloud.gateway.httpclient.connect-timeout = 1000
+spring.cloud.gateway.httpclient.response-timeout = 2s
+
+For Per Route:
+~~~~~~~~~~~~~~
+
+Add below in Main Application of Gateway Server
+
+	@Bean
+      public RouteLocator customRouteLocator(RouteLocatorBuilder routeBuilder){
+         return routeBuilder.routes()
+               .route("test1", r -> {
+                  return r.host("*.somehost.org").and().path("/somepath")
+                        .filters(f -> f.addRequestHeader("header1", "header-value-1"))
+                        .uri("http://someuri")
+                        .metadata(RESPONSE_TIMEOUT_ATTR, 200)
+                        .metadata(CONNECT_TIMEOUT_ATTR, 200);
+               })
+               .build();
+      }
+	  
+Note: If RESPONSE_TIMEOUT_ATTR is set as -1 then Global Configuration is disabled
+
+
+
+Retry Pattern:
+--------------
+
+For multiple retry attemps when a service was temporarily failed.
+
+For Idempotent Operations(Get) use retry pattern.
+
+Implementing in Gateway:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Add Retry Filter in Main class
+
+					.route(p -> p
+							.path("/eazybank/loans/**")
+							.filters( f -> f.rewritePath("/eazybank/loans/(?<segment>.*)","/${segment}")
+									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
+									.retry(retryConfig -> retryConfig.setRetries(3)
+											.setMethods(HttpMethod.GET)
+											.setBackoff(Duration.ofMillis(100),Duration.ofMillis(1000),2,true)))
+							.uri("lb://LOANS"))
+							
+Implementing in Microservice:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1) Add @Retry Annotation on top of endpoint method
+
+ @Retry(name = "getBuildInfo",fallbackMethod = "getBuildInfoFallback")
+    @GetMapping("/build-info")
+    public ResponseEntity<String> getBuildInfo() {
+        logger.debug("getBuildInfo() method Invoked");
+        return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(buildVersion);
+    }							
+			
+fallbackMethod should match with the original method. It should have a parameter Throwable.
+
+public ResponseEntity<String> getBuildInfoFallback(Throwable throwable) {
+        logger.debug("getBuildInfoFallback() method Invoked");
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body("0.9");
+    }
+
+2) Add below in application.properties
+
+spring.resilience4j.retry.configs.default.maxAttempts=3
+spring.resilience4j.retry.configs.default.waitDuration=500
+spring.resilience4j.retry.configs.default.enableExponentialBackoff=true
+spring.resilience4j.retry.configs.default.exponentialBackoffMultiplier=2
+spring.resilience4j.retry.configs.default.ignoreExceptions=java.lang.NullPointerException
+spring.resilience4j.retry.configs.default.retryExceptions=java.util.concurrent.TimeoutException	
+
+If you have multiple exceptions for ignoreExceptions or retryExceptions, you can separate them with commas, like:
+spring.resilience4j.retry.configs.default.ignoreExceptions=java.lang.NullPointerException,java.lang.IllegalArgumentException
+
+Note: Fallback mechanism can be done only on Microservice not on Gateway Implemenation.
+
+
+Rate Limiter Pattern:
+---------------------
+
+429 is the status code if too many requests are attempted.
+
+Whenever we try to implement this pattern we need a Key Resolver.
+Using KeyResolver interface we need to tell the gateway server  what is the criteria that we want to enforce the ratelimiter based upon a User, session, ipaddress, server.
+
+
+Implementing in Gateway:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+We need redis to be running
+
+1) Add dependency
+spring-boot-starter-data-redis-reactive
+
+2) Create 2 Bean in main application class
+
+	@Bean
+	public RedisRateLimiter redisRateLimiter() {
+		return new RedisRateLimiter(1, 1, 1);
+	}
+
+	@Bean
+	KeyResolver userKeyResolver() {
+		return exchange -> Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst("user"))
+				.defaultIfEmpty("anonymous");
+	}
+	
+3) Add ratelimiter filter 
+
+				.route(p -> p
+							.path("/eazybank/cards/**")
+							.filters( f -> f.rewritePath("/eazybank/cards/(?<segment>.*)","/${segment}")
+									.addResponseHeader("X-Response-Time", LocalDateTime.now().toString())
+									.requestRateLimiter(config -> config.setRateLimiter(redisRateLimiter())
+											.setKeyResolver(userKeyResolver())))
+							.uri("lb://CARDS")).build();
+							
+4) Add below
+spring.data.redis.connect-timeout=2s
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
+spring.data.redis.timeout=1s
+
+Implementing in Microservice:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1) Add @RateLimiter
+   @RateLimiter(name= "getJavaVersion", fallbackMethod = "getJavaVersionFallback")
+    @GetMapping("/java-version")
+    public ResponseEntity<String> getJavaVersion() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(environment.getProperty("JAVA_HOME"));
+    }
+	
+	 public ResponseEntity<String> getJavaVersionFallback(Throwable throwable) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body("Java 21");
+    }
+	
+2) Add below
+resilience4j.ratelimiter.configs.default.timeoutDuration=1000
+resilience4j.ratelimiter.configs.default.limitRefreshPeriod=5000
+resilience4j.ratelimiter.configs.default.limitForPeriod=1
+
+These durations (timeoutDuration, limitRefreshPeriod) are in milliseconds by default.
+If you prefer explicit units, you can use the ISO-8601 duration format (e.g., PT1S for 1 second, PT5S for 5 seconds).
+
+
+BulkHead Pattern:
+-----------------
+
+
+The Resilience4j Aspects order is the following:
+Retry ( CircuitBreaker ( RateLimiter ( TimeLimiter ( Bulkhead ( Function ) ) ) ) )
+
+If you need a different order, you must use the functional chaining style instead of the Spring annotations style or explicitly set aspect order using the following properties:
+
+- resilience4j.retry.retryAspectOrder
+- resilience4j.circuitbreaker.circuitBreakerAspectOrder
+- resilience4j.ratelimiter.rateLimiterAspectOrder
+- resilience4j.timelimiter.timeLimiterAspectOrder
+- resilience4j.bulkhead.bulkheadAspectOrder
+
+***************************************************************************************************************************************************************************************
+
+Observablity & Monitoring:
+==========================
+
+Observablity is the ability to understand internal state of system by observing its outputs. It can be done by collecting & analyzing data from sources like metrics, logs & traces.
+
+GRAFANA:
+--------
+
+Grafana is used to implement Observablity & Monitoring for any kind of applications.
+Grafana Loki  :- For log aggregating
+Promtail :- For Logs
+Prometheus :- For Metrics
+Grafana Tempo :- For Tracing 
+
+For Log Managing:
+~~~~~~~~~~~~~~~~~
+
+Grafana, Loki & Promtail is used for managing logging.
+
+Grafana Loki is horizontally scaleable log aggregation system . Its a storage system.
+Promtail is a lightweight log agent that ships logs from containers to loki.
+Grafana is used to query & search logs with loki.
+
+From Grafana Loki version 3.0 onwards, Promtail, which is responsible for scraping log lines, has been replaced with a new product called Alloy.
+
+For Metrics & Monitoring:
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Spring Actuator, Micrometer, Prometheus & Grafana.
+
+Prometheus : used to collect metrics from individual microservice: http://localhost:9090/targets
+
+Add Dependency in all the microservice 
+micrometer-registry-prometheus
+
+Add Property
+spring.management.metrics.tags.application = ${spring.application.name}
+
+Using Spring Actuator We can also monitor the Metrics. Here the drawback we have to go and check by calling the api
+
+
+Create Alerts & Send Notifications:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+
+We can create alerts & send notifications using Grafana Dashboard.
+
+Distributed Tracing:
+~~~~~~~~~~~~~~~~~~~
+To understand and analyze the flow of requests as they propagate across multiple components.
+Its achieved by using[tagId, traceId, spanId]
+tagId - For each Microservice
+traceId - For each request
+spanId - For each each flow in microservice
+
+Option to implement distributed service:
+
+Spring Cloud Sleuth : It will automtically add the [tagId, traceId, spanId]. Its deprecated
+Micrometer specific to java
+OpenTelemetry can be used for many languages
+
+
+Implement OpenTelemetry:
+````````````````````````
+
+1) Add dependency in all microservice
+ opentelemetry-javaagent 
+ 
+2) In application.properties
+spring.logging.pattern.level = "%5p [${spring.application.name},%X{trace_id},%X{span_id}]"
+
+
+Tempo: 
+`````
+Used to store and analyze the trace data.
+
+Similer Products:
+Zipkin
+Jaeger
+
+***************************************************************************************************************************************************************************************
+
+Microservices Security:
+=======================
+@EnableWebFluxSecurity : USe this as the gateway is build on Spring Cloud.
+
+Use Bean in Config Class(authorizeExchange)
+
+	@Bean
+    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity serverHttpSecurity) {
+        serverHttpSecurity.authorizeExchange(exchanges -> exchanges.pathMatchers(HttpMethod.GET).permitAll()
+                .pathMatchers("/eazybank/accounts/**").hasRole("ACCOUNTS")
+                .pathMatchers("/eazybank/cards/**").hasRole("CARDS")
+                .pathMatchers("/eazybank/loans/**").hasRole("LOANS"))
+                .oauth2ResourceServer(oAuth2ResourceServerSpec -> oAuth2ResourceServerSpec
+                        .jwt(jwtSpec -> jwtSpec.jwtAuthenticationConverter(grantedAuthoritiesExtractor())));
+        serverHttpSecurity.csrf(csrfSpec -> csrfSpec.disable());
+        return serverHttpSecurity.build();
+    }
+
+***************************************************************************************************************************************************************************************
+
+EVENT DRIVEN MCROSERVICES:
+==========================
+
+Two Major Event Driven Models:
+------------------------------
+Publisher/Subscriber Model : Rabbit MQ
+	New subscribers joining later will not have access to past events.
+Event Streaming Model : Apache Kafka
+	Allow clients to join at any time and recieve all past events. Events are written to a log in a sequential manner.  
+		
+RbbitMQ:
+--------
+Recognized for its utilization of AMQP(Advanced Message Queing Protocol) . It offers flexible asynchronous messaging, distributed deployment and comprehensive monitoring. 
+Recent versions have incorporated event streaming functionalities into their feature set.
+
+Producer(Publisher) :- Responsible for sending messages.
+Consumer(Subscriber) :- Entity tasked with recieving messages.
+
+Spring Cloud Function:
+----------------------
+Spring Cloud Function is a project in the Spring ecosystem that focuses on building applications around the idea of functions as the primary unit of business logic. Instead of tying your code to a specific runtime (like web controllers, messaging listeners, or batch jobs), Spring Cloud Function allows you to write simple functions (Function, Consumer, or Supplier) and then adapt them to different runtime environments.
+
+Key Concepts:
+~~~~~~~~~~~~~
+*) Functional Programming Model
+*) Decoupling Business Logic from Transport
+	Your code doesn't need to care if the function is triggered by HTTP, messaging systems (Kafka, RabbitMQ), or cloud services (AWS Lambda, Azure Functions, GCP).
+*) Serverless Ready
+	Functions can be deployed directly to serverless platforms like AWS Lambda, Azure Functions, or Google Cloud Functions without modification.
+*) Spring Integration
+	Supports dependency injection, configuration, Spring Boot autoconfiguration, and the rest of the Spring ecosystem. You can also chain functions together and compose them dynamically.
+	
+-To convert the Function into Rest APIs add dependency
+spring-cloud-starter-web
+
+-Function definition (composition: email -> sms)
+spring.cloud.function.definition=email|sms
+
+
+Spring Cloud Stream:
+--------------------
+
+1) Add Dependency
+spring-cloud-stream : internally it will add Spring cloud Function
+pring-cloud-stream-binder-rabbit
+
+*) Add below in application.properties
+# Input binding
+spring.cloud.stream.bindings.emailsms-in-0.destination=send-communication(queue name in RabbitMQ)
+spring.cloud.stream.bindings.emailsms-in-0.group=${spring.application.name}
+
+# Output binding
+spring.cloud.stream.bindings.emailsms-out-0.destination=communication-sent
+
+# RabbitMQ
+spring.rabbitmq.host=localhost
+spring.rabbitmq.port=5672
+spring.rabbitmq.username=guest
+spring.rabbitmq.password=guest
+spring.rabbitmq.connection-timeout=10s
+
+3) Add the dependency in Microservice
+spring-cloud-stream : internally it will add Spring cloud Function
+pring-cloud-stream-binder-rabbit
+
+4) Add bleow properties in Microservices
+# RabbitMQ
+spring.rabbitmq.host=localhost
+spring.rabbitmq.port=5672
+spring.rabbitmq.username=guest
+spring.rabbitmq.password=guest
+spring.rabbitmq.connection-timeout=10s
+
+# Input binding
+spring.cloud.stream.bindings.updateCommunication-in-0.destination = communication-sent
+spring.cloud.stream.bindings.updateCommunication-in-0.group =  ${spring.application.name}
+
+#Output binding
+spring.cloud.stream.bindings. sendCommunication-out-0.destination: send-communication
+
+5) 
+
+
+
+
+spring.management.endpoint.health.probes.enable = true :- Add this in a project so that the project depends on this project will start after this project started 
+
+
+
+
+
+
+
+
