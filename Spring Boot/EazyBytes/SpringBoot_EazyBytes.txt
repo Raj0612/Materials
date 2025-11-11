@@ -231,7 +231,7 @@ Encoding:  ASCII, BASE64, UNICODE
 CSRF :- Cross Site Request Forgery
 http.csrf().ignoringRequestMatchers("/path").ignoringRequestMatchers("path2") --- To disable csrf protection for the path specified
 
-spring.jpa.properties.javax.persistence.validation.mode = none :- To disable javax validation
+spring.jpa.properties.javax.persistence.validation.mode = none :- To disable javax validation on the Entity classes
 #######################################################################################################################################################################################
 
 SPRING JDBC

@@ -293,7 +293,7 @@ Two Types of Filtering:
 1) Static Filetering :- @JsonIgnoreProperties, @JsonIgnore . @JsonIgnore :- Annotate on top of the field. @JsonIgnoreProperties("field1", "field2") :- Annotate on top of the POJO class
 2) Dynamic Filtering :- @JsonFilter with FilterProvider. Will be done on the API method.
 	Steps:
-		*) Add @JsonFilter(FilterName) on top of the POJO class
+		*) Add @JsonFilter("FilterName") on top of the POJO class
 		*) Add the below code in the API method in controller
 			MappingJacksonValue  mappingJacksonValue = new MappingJacksonValue(object);
 			SimpleBeanPropertyFilter filter = SimpleBeanPropertyFilter.filterOutAllExcept("fieldName", "filedName");
