@@ -1,0 +1,40 @@
+Health:
+=======
+
+management.endpoints.web.exposure.include: "*"
+	- This property exposes ALL actuator endpoints over HTTP. If you do not configure this, Spring Boot exposes only health & info.
+	
+Examples of actuator endpoints:
+-------------------------------
+/actuator/health
+/actuator/info
+/actuator/metrics
+/actuator/env
+/actuator/beans
+/actuator/threaddump
+/actuator/loggers
+/actuator/prometheus, etc.
+
+management.health.readiness-state.enabled: true
+	- This enables the readiness probe in the health endpoint. /actuator/health/readiness
+management.health.liveness-state.enabled: true
+	- This enables the liveness probe in the health endpoint.
+management.endpoint.health.probes.enabled: true
+	- This enables Kubernetes-style health probes inside /actuator/health.
+	
+Spring SQL:
+==========
+	
+spring:
+  sql:
+    init:
+      mode: always
+	
+This property controls when Spring Boot should execute SQL initialization scripts, such as: schema.sql → table creation , data.sql → seed data , any custom SQL files you configured.
+mode: always means  Spring Boot will always run SQL scripts at startup no matter which database you are using.
+
+spring.sql.init.mode = embedded
+	- Runs scripts only for in-memory databases
+	
+spring.jpa.hibernate.ddl-auto: none
+	- disable Hibernate auto-DDL.
