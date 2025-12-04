@@ -1,0 +1,2 @@
+@ConditialOnClass(ClassName.class) : Use this configuartin when ClassName is there in classpath
+	

@@ -179,17 +179,22 @@ public HelloWorldBean helloWord(@PathVariable String name){
 
 Status Code:
 ------------
-404 :- Resource Not Found
-500 :- Server Exception
+
+
 200 :- Success
 201 :- Created
 204 :- No Content
 301 :- A 301 redirect shows that the requested URL is “permanently” moved to the long URL. Since it is permanently redirected, the browser caches the response, and subsequent requests for the same URL will not be sent to the URL shortening service. Instead, requests are redirected to the long URL server directly.
 302 :- A 302 redirect means that the URL is “temporarily” moved to the long URL, meaning that subsequent requests for the same URL will be sent to the URL shortening service first. Then, they are redirected to the long URL server.
+400 :- Bad Request such as Validation Error
 401 :- UnAuthorized
 403 :- Forbidden
-400 :- Bad Request such as Validation Error
+404 :- Resource Not Found
 429 :- A user has sent too many requests 
+500 :- Server Exception. Internal Server Error
+502 :- Bad Gateway
+503 :- Service Unaavilable
+
 
 ResponseEntity :- ResponseEntity is a powerful class in Spring MVC that represents the entire HTTP response, including the status code, headers, and body. It extends HttpEntity by adding an HTTP status code.
 
