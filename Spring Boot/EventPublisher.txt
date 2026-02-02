@@ -16,7 +16,7 @@
 		}
 	}
 	
-2) In class register the event  by Autowiring ApplicationEventPublisher
+2) In class, register the event by Autowiring ApplicationEventPublisher
 
 		import org.springframework.context.ApplicationEventPublisher;
 		import org.springframework.stereotype.Service;

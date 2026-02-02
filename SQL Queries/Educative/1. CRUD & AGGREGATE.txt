@@ -172,8 +172,8 @@ SELECT Salary AS SecondHighestSalary FROM  Employees WHERE Salary < (SELECT  Max
 
 To find 3rd Highest Salary:
 ---------------------------
-SELECT Salary AS SecondHighestSalary FROM  Employees ORDER BY Salary DESC Limit 2, 1;
 
+SELECT Salary AS SecondHighestSalary FROM  Employees ORDER BY Salary DESC Limit 2, 1; (skip 2 first 2 rows and select 1 row )
 
 Finding the second-lowest value in the Employees table:
 -------------------------------------------------------
@@ -189,8 +189,8 @@ SELECT Salary FROM Employees ORDER BY Salary DESC LIMIT n-1, 1;
 AGGREGATE RECORDS Using COUNT
 #############################
 
-To Find students absent during test:
-------------------------------------
+To Find number of students absent during test:
+----------------------------------------------
 SELECT COUNT(*) AS AbsentStudents FROM   StudentGrades WHERE  Marks IS NULL;
 SELECT SUM(CASE 
 			WHEN Marks IS NULL 

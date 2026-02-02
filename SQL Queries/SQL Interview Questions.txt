@@ -1,0 +1,142 @@
+https://leetcode.ca/2019-08-11-1350-Students-With-Invalid-Departments/
+https://github.com/Qian-Yu-2020/Leetcode-Problems/blob/master/Schools%20and%20Organizations/%23%201350.%20Students%20With%20Invalid%20Departments.sql
+
+Find the Team Size
+https://leetcode.ca/2019-06-25-1303-Find-the-Team-Size/
+
+select employee_id, count as team_size
+from Employee
+left join (
+    select team_id, count(*) as count
+    from Employee
+    group by team_id
+) team 
+on team.team_id = Employee.team_id
+
+
+Find Customers With Positive Revenue this Year
+https://leetcode.ca/2021-06-12-1821-Find-Customers-With-Positive-Revenue-this-Year/
+select customer_id from Customers where year = '2021' and revenue > 0;
+
+
+Warehouse Manager
+https://leetcode.ca/2020-03-19-1571-Warehouse-Manager/
+select w.name as warehouse_name, 
+ sum(w.units * sub.vol) as volume
+from Warehouse w
+left join (
+    select p.product_id, p.Width * p.Length * p.Height as vol 
+    from Products p
+
+) as sub 
+on w.product_id = sub.product_id
+group by warehouse_name;
+
+Find Total Time Spent by Each Employee
+https://leetcode.com/problems/find-total-time-spent-by-each-employee/
+https://walkccc.me/LeetCode/problems/1741/
+select event_day as day, emp_id, 
+sum(out_time - in_time) as total_time
+from Employees
+group by emp_id, event_day
+
+All the Matches of the League
+https://github.com/kamyu104/LeetCode-Solutions/blob/master/MySQL/all-the-matches-of-the-league.sql
+https://leetcode.ca/2022-08-19-2339-All-the-Matches-of-the-League/#google_vignette
+select t1.team_name as home_team, t2.team_name as away_team
+from Teams t1, Teams t2
+where t1.team_name != t2.team_name
+
+
+Number of Unique Subjects Taught by Each Teacher
+https://github.com/kamyu104/LeetCode-Solutions/blob/master/MySQL/number-of-unique-subjects-taught-by-each-teacher.sql
+
+Combine Two Tables
+https://leetcode.com/problems/combine-two-tables/
+https://wihoho.gitbooks.io/leetcode-solutions/content/175-combine-two-tables.html
+
+Employees Whose Manager Left the Company
+https://github.com/kamyu104/LeetCode-Solutions/blob/master/MySQL/employees-whose-manager-left-the-company.sql
+select employee_id
+from Employees
+where salary < 30000 
+and manager_id not in (
+    select employee_id
+    from Employees
+)
+order by employee_id
+
+
+Sales Analysis III
+https://mansiaanand.medium.com/1084-sales-analysis-iii-f2142e4ec3a1
+select product_id, product_name
+from Product
+where product_id in (
+    select product_id
+    from Sales
+    where sale_date >= '2019-01-01' and sale_date <= '2019-03-31'
+)
+
+
+ Number of Comments per Post
+ https://leetcode.ca/2019-04-24-1241-Number-of-Comments-per-Post/
+ https://github.com/Qian-Yu-2020/Leetcode-Problems/blob/master/Social%20Media%20and%20Posts/%23%201241.%20Number%20of%20Comments%20per%20Post.sql
+ Write a solution to find the number of comments per post. The result table should contain post_id and its corresponding number_of_comments.
+
+The Submissions table may contain duplicate comments. You should count the number of unique comments per post.
+
+The Submissions table may contain duplicate posts. You should treat them as one post.
+
+The result table should be ordered by post_id in ascending order.
+
+ select s1.sub_id as post_id,
+count(distinct s2.sub_id) as number_of_comments
+from Submissions as s1
+left join Submissions as s2
+on s1.sub_id = s2.parent_id
+where s1.parent_id is null
+group by s1.sub_id
+ 
+Percentage of Users Attended a Contest
+https://medium.com/@rameesanadeem9/leetcode-1633-percentage-of-users-attended-a-contest-70fe99cb4759
+select contest_id, 
+round(count(distinct user_id) * 100 / (
+    select count(user_id) from Users
+), 2) as percentage
+from Register
+group by contest_id
+order by percentage desc, contest_id
+
+Top Travellers
+https://github.com/Qian-Yu-2020/Leetcode-Problems/blob/master/Customers%20or%20Users/%23%201407.%20Top%20Travellers.sql
+https://dev.to/ranggakd/top-travellers-leetcode-mssql-4kpb
+select u.name, 
+IFNULL(sum(r.distance),0) as travelled_distance
+from Users u
+left join Rides r
+on u.id = r.user_id
+group by u.id
+order by travelled_distance desc, name asc
+
+
+The Number of Rich Customers
+https://leetcode.ca/2021-12-05-2082-The-Number-of-Rich-Customers/
+https://github.com/kamyu104/LeetCode-Solutions/blob/master/MySQL/the-number-of-rich-customers.sql
+
+
+Average Selling Price
+https://mansiaanand.medium.com/1251-average-selling-price-efacbea58f6a
+https://dev.to/ranggakd/average-selling-price-leetcode-mssql-37od
+select p.product_id, 
+ifnull(round( sum(u.units * p.price) / sum(units), 2), 0) as average_price
+from Prices p 
+left join UnitsSold u
+on p.product_id = u.product_id and
+ u.purchase_date between p.start_date and p.end_date
+group by product_id
+
+
+Actors and Directors Who Cooperated At Least Three Times
+https://github.com/yanshengjia/algorithm/blob/master/leetcode/SQL/1050.%20Actors%20and%20Directors%20Who%20Cooperated%20At%20Least%20Three%20Times.sql
+https://circlecoder.com/actors-and-directors-who-cooperated-at-least-three-times/
+https://dev.to/ranggakd/actors-and-directors-who-cooperated-at-least-three-times-leetcode-mssql-218d

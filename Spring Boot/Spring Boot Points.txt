@@ -1,2 +1,49 @@
-@ConditialOnClass(ClassName.class) : Use this configuartin when ClassName is there in classpath
-	
+@ConditionalOnClass(ClassName.class) : Use this configuratin when ClassName is there in classpath
+@ConditionalOnMissingBean(ClassName.class)
+
+
+ObjectMapper: - User to convert Objects to string
+
+***************************************************************************************************************************************************************************************
+
+*) @SpringBootApplication
+= @Configuration
++ @ComponentScan
++ @EnableAutoConfiguration
+
+*) Each auto-config class uses conditions
+@ConditionalOnClass
+@ConditionalOnMissingBean
+@ConditionalOnProperty
+
+@ConditionalOnClass vs  @ConditionalOnMissingBean:
+==================================================
+
+@ConditionalOnClass
+-------------------
+Is a particular class present on the classpath? Enables configuration only if a dependency (JAR/class) exists
+
+
+@ConditionalOnMissingBean
+--------------------------
+Has the user already defined this bean? Ensures user-defined beans override auto-config
+*) To See What Was Auto-Configured
+debug=true
+
+***************************************************************************************************************************************************************************************
+@AllArgsConstructor vs  @RequiredArgsConstructor
+================================================
+@AllArgsConstructor
+--------------------
+Generates a constructor with one parameter for every field in the class.
+1) Includes all fields
+2) Includes final fields
+3) Includes non-final fields
+4) Includes fields with default values
+
+@RequiredArgsConstructor:
+-------------------------
+1) Include final fields
+2) Fields annotated with @NonNull
+
+***************************************************************************************************************************************************************************************

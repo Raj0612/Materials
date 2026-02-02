@@ -165,8 +165,12 @@ WHERE  e.EmpID = p.EmpID;
 
 
 Finding the name of the employees whose skills are not in the database:
-------------------------------------------------------------------------------
-SELECT e.EmpName FROM Employees AS e WHERE
+------------------------------------------------------------------------
+SELECT e.EmpName
+FROM Employees e
+LEFT JOIN Skills s
+ON e.EmpID = s.EmpID
+WHERE s.EmpID IS NULL;
 
 
 Finding the list of employees who have lesser salary than a specific employee:

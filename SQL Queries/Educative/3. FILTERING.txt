@@ -55,6 +55,15 @@ SELECT * FROM StudentGrades WHERE  StudentName LIKE '%a';
 SELECT * FROM StudentGrades WHERE  RIGHT(StudentName, 1) = 'a';
 
 SELECT * FROM StudentGrades WHERE  SUBSTRING(StudentName, -1) = 'a';
+
+SELECT * FROM StudentGrades WHERE  SUBSTRING(StudentName, 3) = 'ana';
+
+Note:
+SUBSTRING(string, start_position, length)
+
+What does SUBSTRING(StudentName, 2) do?
+*) Skips the first character and Returns everything from the 2nd character to the end
+
 SELECT * 
 FROM StudentGrades
 WHERE SUBSTRING(StudentName, LEN(StudentName), 1) = 'a';
@@ -74,6 +83,9 @@ LOCATE() and REVERSE():
 We can use the LOCATE() function to filter the records. The LOCATE() function takes three variables: a substring, the string, and the start position. It returns the position of the first occurrence of the substring in the string. In our use case, the REVERSE() function reverses the names in the StudentName column, and the LOCATE() function checks names in the StudentName column to find if the first letter of the reversed name is “a.” 
 
 SELECT * FROM StudentGrades WHERE  LOCATE('a', REVERSE(StudentName)) = 1;
+
+Note:
+Is the first character of the reversed name equal to 'a'?
 
 
 Finding the records of student names starting with “C” or ending in “a”:
