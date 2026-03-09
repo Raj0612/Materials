@@ -1,0 +1,64 @@
+Visual Studio Extension
+prettier extension
+live server
+Auto close tag
+
+fonts.google.com
+https://typescale.com/
+https://yeun.github.io/open-color/
+coolers.io
+heroicons.com
+
+onepagelove.com
+awwwards.com
+land-book.com
+june.so
+
+lorem + Enter --> For many texts
+Alt + arrow key to move lines up and down
+Alt and select text -- > For copying into many places
+
+
+diffchecker
+html validator
+
+Visia
+
+
+Windows + "." -- To show emoji
+Ways of Writing CSS
+Inline - Writing inside the element
+Internal - Adding into the head tag
+External - Writing a separtate CSS file and linking in the CSS file
+
+id should be unique, whereas we can have same classname for many elements
+
+
+Rules of Selecters
+1)Marked as !important 
+2)Inline styles
+3)ID Selector
+4)Class Selecters
+5)Element Selector -- Pseudo class has more priority 
+6)Universal Selector(*)
+
+If there are multiple selectors of same type the last selecter in the code applies.
+
+Types of Boxes:
+Inline Boxes - The elements which occupies exact width needed for the content. Height and widths do not apply. Padding and margins are applied only horizontally(left and right). Eg) strong, a , button , em, pseudo-elements after and before,  etc
+Block Level Boxes(Elements) - The elements which occupies all spaces they can and have a line break. They cannot be places side by side. Eg) body, main, header, footer, section, nav, aside, div, p, h1-h6, ul, ol, li, etc
+Inline-Block - Originally Inline but can apply block properties
+
+Positioning
+Normal Flow : Default Positioning(position:relative): Element is "in flow"
+Absoulute Positioning : position:absolute : Element is removed from the normal flow "out of flow".
+
+box-sizing:border-box -- > Includes Height or Width including padding and border
+flex-shrink, flex-grow, flex-basis
+
+box-shadow -- Used to shadow the element
+box-shadow: 20px 20px 20px 10px #000; --> 1st value for horziontal, 2nd value for vertical, 3rd value for blur and 4th is optional to scale up the shadow, 5th is for color
+
+
+
+
